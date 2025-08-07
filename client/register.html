@@ -46,6 +46,53 @@
                     </select>
                 </div>
                 
+                <!-- Doctor-specific fields (hidden by default) -->
+                <div id="doctorFields" class="doctor-fields" style="display: none;">
+                    <div class="form-group">
+                        <label for="specialization">Specialization</label>
+                        <select id="specialization" name="specialization">
+                            <option value="">Select specialization</option>
+                            <option value="Cardiologist">Cardiologist</option>
+                            <option value="Pediatrician">Pediatrician</option>
+                            <option value="Dermatologist">Dermatologist</option>
+                            <option value="Orthopedic Surgeon">Orthopedic Surgeon</option>
+                            <option value="Neurologist">Neurologist</option>
+                            <option value="Psychiatrist">Psychiatrist</option>
+                            <option value="General Physician">General Physician</option>
+                            <option value="Dentist">Dentist</option>
+                            <option value="Ophthalmologist">Ophthalmologist</option>
+                            <option value="Gynecologist">Gynecologist</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="licenseNumber">Medical License Number</label>
+                        <input type="text" id="licenseNumber" name="licenseNumber" placeholder="Enter your medical license number">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="experience">Years of Experience</label>
+                        <input type="number" id="experience" name="experience" min="0" max="50" placeholder="Number of years">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="education">Education</label>
+                        <input type="text" id="education" name="education" placeholder="e.g., MBBS, MD, PhD">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" placeholder="Enter your phone number">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="clinic">Select Clinic (Optional)</label>
+                        <select id="clinic" name="clinic">
+                            <option value="">Choose a clinic (optional)</option>
+                        </select>
+                    </div>
+                </div>
+                
                 <button type="submit" class="login-btn">
                     <i class="fas fa-user-plus"></i>
                     Create Account
@@ -63,15 +110,58 @@
     </div>
 
     <script>
+        // Load clinics for doctor registration
+        async function loadClinics() {
+            try {
+                const response = await fetch('http://localhost:5000/api/clinics');
+                const clinics = await response.json();
+                const clinicSelect = document.getElementById('clinic');
+                
+                clinics.forEach(clinic => {
+                    const option = document.createElement('option');
+                    option.value = clinic._id;
+                    option.textContent = clinic.name;
+                    clinicSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading clinics:', error);
+            }
+        }
+
+        // Show/hide doctor fields based on role selection
+        document.getElementById('role').addEventListener('change', function() {
+            const doctorFields = document.getElementById('doctorFields');
+            const isDoctor = this.value === 'doctor';
+            
+            if (isDoctor) {
+                doctorFields.style.display = 'block';
+                // Make doctor fields required
+                const doctorInputs = doctorFields.querySelectorAll('input, select');
+                doctorInputs.forEach(input => {
+                    if (input.name !== 'clinic') { // Clinic is optional
+                        input.required = true;
+                    }
+                });
+            } else {
+                doctorFields.style.display = 'none';
+                // Remove required from doctor fields
+                const doctorInputs = doctorFields.querySelectorAll('input, select');
+                doctorInputs.forEach(input => {
+                    input.required = false;
+                });
+            }
+        });
+
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const formData = new FormData(e.target);
             const password = formData.get('password');
             const confirmPassword = formData.get('confirmPassword');
+            const role = formData.get('role');
             
             if (password !== confirmPassword) {
-                alert('Passwords do not match!');
+                showToast('Passwords do not match!', 'error');
                 return;
             }
             
@@ -79,8 +169,18 @@
                 name: formData.get('name'),
                 email: formData.get('email'),
                 password: password,
-                role: formData.get('role')
+                role: role
             };
+            
+            // Add doctor-specific data if registering as doctor
+            if (role === 'doctor') {
+                data.specialization = formData.get('specialization');
+                data.licenseNumber = formData.get('licenseNumber');
+                data.experience = formData.get('experience');
+                data.education = formData.get('education');
+                data.phone = formData.get('phone');
+                data.clinic = formData.get('clinic') || null;
+            }
             
             try {
                 const response = await fetch('http://localhost:5000/api/auth/register', {
@@ -91,17 +191,75 @@
                     body: JSON.stringify(data)
                 });
                 
+                const result = await response.json();
+                
                 if (response.ok) {
-                    alert('Registration successful! Please login.');
-                    window.location.href = 'login.html';
+                    showToast('Registration successful! Please login.', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
                 } else {
-                    alert('Registration failed. Please try again.');
+                    showToast(result.error || 'Registration failed. Please try again.', 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                showToast('An error occurred. Please try again.', 'error');
             }
         });
+
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Load clinics on page load
+        loadClinics();
     </script>
+
+    <style>
+        .doctor-fields {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .doctor-fields .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .toast {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
 </body>
 </html> 
