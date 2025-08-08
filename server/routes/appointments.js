@@ -71,6 +71,12 @@ router.get('/booked-slots/:doctorId/:date', async (req, res) => {
   try {
     const { doctorId, date } = req.params;
     
+    // Validate date format
+    const inputDate = new Date(date);
+    if (isNaN(inputDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+    
     // Create start and end of the specified date
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
@@ -91,8 +97,13 @@ router.get('/booked-slots/:doctorId/:date', async (req, res) => {
     // Extract the time slots that are booked
     const bookedSlots = bookedAppointments.map(appointment => {
       const slotTime = new Date(appointment.slot);
+      // Check if the date is valid
+      if (isNaN(slotTime.getTime())) {
+        console.warn('Invalid date found in appointment:', appointment._id);
+        return null;
+      }
       return slotTime.toTimeString().slice(0, 5); // Format as HH:MM
-    });
+    }).filter(slot => slot !== null); // Remove invalid slots
     
     res.json({ bookedSlots });
   } catch (error) {
@@ -111,7 +122,14 @@ router.get('/doctor/:doctorId', auth, async (req, res) => {
     .populate('clinic', 'name location')
     .sort({ slot: 1 });
 
-    res.json(appointments);
+    // Add appointment type for better categorization
+    const appointmentsWithType = appointments.map(appointment => {
+      const appointmentObj = appointment.toObject();
+      appointmentObj.appointmentType = appointment.status === 'cancelled' ? 'cancelled' : 'active';
+      return appointmentObj;
+    });
+
+    res.json(appointmentsWithType);
   } catch (error) {
     console.error('Error fetching doctor appointments:', error);
     res.status(500).json({ error: 'Failed to fetch appointments' });

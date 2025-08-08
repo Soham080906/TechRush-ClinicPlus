@@ -178,8 +178,25 @@
 
                 <!-- Doctor Dashboard Section (for doctors only) -->
                 <section id="doctorDashboardSection" class="dashboard-section" style="display: none;">
-                    <h2>Patient Appointments</h2>
-                    <p class="section-description">View appointments booked by patients with you</p>
+                    <div class="section-header">
+                        <div>
+                            <h2>Patient Appointments</h2>
+                            <p class="section-description">View appointments booked by patients with you</p>
+                        </div>
+                        <div class="section-actions">
+                            <div class="filter-controls">
+                                <label for="appointmentFilter">Filter:</label>
+                                <select id="appointmentFilter" class="filter-select">
+                                    <option value="all">All Appointments</option>
+                                    <option value="active">Active Only</option>
+                                    <option value="cancelled">Cancelled Only</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" id="bookNewAppointmentBtn">
+                                <i class="fas fa-plus"></i> Help Patient Book
+                            </button>
+                        </div>
+                    </div>
                     <div class="appointments-list" id="doctorAppointmentsList">
                         <!-- Doctor's patient appointments will be loaded here -->
                     </div>
@@ -238,7 +255,10 @@
                 document.getElementById('doctorDashboardSection').style.display = 'block';
                 
                 // Hide patient appointments for doctors
-                document.getElementById('appointments').style.display = 'none';
+                const appointmentsSection = document.querySelector('section.dashboard-section');
+                if (appointmentsSection && appointmentsSection.querySelector('#appointmentsList')) {
+                    appointmentsSection.style.display = 'none';
+                }
                 
                 // Load doctor profile
                 fetchDoctorProfileAndLoad();
@@ -253,17 +273,48 @@
         async function fetchDoctorProfileAndLoad() {
             const userId = localStorage.getItem('userId');
             const token = localStorage.getItem('token');
-            if (!userId || !token) return;
+            if (!userId || !token) {
+                console.error('Missing userId or token for doctor profile');
+                loadDoctorProfile(); // Load with fallback data
+                return;
+            }
+            
             try {
                 const response = await fetch(`http://localhost:5000/api/doctors/user/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                
                 if (response.ok) {
                     const profile = await response.json();
                     localStorage.setItem('doctorProfile', JSON.stringify(profile));
+                    console.log('Doctor profile loaded successfully:', profile);
+                } else {
+                    console.error('Failed to fetch doctor profile:', response.status, response.statusText);
+                    // Create fallback profile with user data
+                    const fallbackProfile = {
+                        name: localStorage.getItem('userName') || 'Dr. Unknown',
+                        specialization: 'General Physician',
+                        clinic: { name: 'Not assigned' },
+                        licenseNumber: 'Not provided',
+                        experience: 0,
+                        education: 'Not provided',
+                        phone: 'Not provided'
+                    };
+                    localStorage.setItem('doctorProfile', JSON.stringify(fallbackProfile));
                 }
             } catch (err) {
                 console.error('Failed to fetch latest doctor profile:', err);
+                // Create fallback profile with user data
+                const fallbackProfile = {
+                    name: localStorage.getItem('userName') || 'Dr. Unknown',
+                    specialization: 'General Physician',
+                    clinic: { name: 'Not assigned' },
+                    licenseNumber: 'Not provided',
+                    experience: 0,
+                    education: 'Not provided',
+                    phone: 'Not provided'
+                };
+                localStorage.setItem('doctorProfile', JSON.stringify(fallbackProfile));
             }
             loadDoctorProfile();
         }
@@ -272,31 +323,66 @@
         function loadDoctorProfile() {
             const doctorProfile = localStorage.getItem('doctorProfile');
             if (doctorProfile) {
-                const profile = JSON.parse(doctorProfile);
-                
-                document.getElementById('doctorName').textContent = profile.name;
-                document.getElementById('doctorSpecialization').textContent = profile.specialization;
-                document.getElementById('doctorClinic').textContent = profile.clinic ? profile.clinic.name : 'Not assigned';
-                document.getElementById('doctorLicense').textContent = profile.licenseNumber || 'Not provided';
-                document.getElementById('doctorExperience').textContent = `${profile.experience || 0} years`;
-                document.getElementById('doctorEducation').textContent = profile.education || 'Not provided';
-                document.getElementById('doctorPhone').textContent = profile.phone || 'Not provided';
-                // Fallback: Show warning if name is missing or 'Name'
-                let warning = document.getElementById('doctorNameWarning');
-                if (!warning) {
-                    warning = document.createElement('div');
-                    warning.id = 'doctorNameWarning';
-                    warning.style.color = '#dc2626';
-                    warning.style.fontWeight = 'bold';
-                    warning.style.marginTop = '0.5rem';
-                    document.getElementById('doctorName').parentElement.appendChild(warning);
+                try {
+                    const profile = JSON.parse(doctorProfile);
+                    
+                    document.getElementById('doctorName').textContent = profile.name || 'Dr. Unknown';
+                    document.getElementById('doctorSpecialization').textContent = profile.specialization || 'General Physician';
+                    document.getElementById('doctorClinic').textContent = profile.clinic ? profile.clinic.name : 'Not assigned';
+                    document.getElementById('doctorLicense').textContent = profile.licenseNumber || 'Not provided';
+                    document.getElementById('doctorExperience').textContent = `${profile.experience || 0} years`;
+                    document.getElementById('doctorEducation').textContent = profile.education || 'Not provided';
+                    document.getElementById('doctorPhone').textContent = profile.phone || 'Not provided';
+                    
+                    // Fallback: Show warning if name is missing or 'Name'
+                    let warning = document.getElementById('doctorNameWarning');
+                    if (!warning) {
+                        warning = document.createElement('div');
+                        warning.id = 'doctorNameWarning';
+                        warning.style.color = '#dc2626';
+                        warning.style.fontWeight = 'bold';
+                        warning.style.marginTop = '0.5rem';
+                        document.getElementById('doctorName').parentElement.appendChild(warning);
+                    }
+                    if (!profile.name || profile.name.trim().toLowerCase() === 'name') {
+                        warning.textContent = 'Please update your profile with your real name!';
+                    } else {
+                        warning.textContent = '';
+                    }
+                    
+                    console.log('Doctor profile loaded and displayed successfully');
+                } catch (error) {
+                    console.error('Error parsing doctor profile:', error);
+                    loadFallbackDoctorProfile();
                 }
-                if (!profile.name || profile.name.trim().toLowerCase() === 'name') {
-                    warning.textContent = 'Please update your profile with your real name!';
-                } else {
-                    warning.textContent = '';
-                }
+            } else {
+                console.log('No doctor profile found, loading fallback');
+                loadFallbackDoctorProfile();
             }
+        }
+        
+        // Load fallback doctor profile
+        function loadFallbackDoctorProfile() {
+            const userName = localStorage.getItem('userName') || 'Dr. Unknown';
+            document.getElementById('doctorName').textContent = userName;
+            document.getElementById('doctorSpecialization').textContent = 'General Physician';
+            document.getElementById('doctorClinic').textContent = 'Not assigned';
+            document.getElementById('doctorLicense').textContent = 'Not provided';
+            document.getElementById('doctorExperience').textContent = '0 years';
+            document.getElementById('doctorEducation').textContent = 'Not provided';
+            document.getElementById('doctorPhone').textContent = 'Not provided';
+            
+            // Show warning to update profile
+            let warning = document.getElementById('doctorNameWarning');
+            if (!warning) {
+                warning = document.createElement('div');
+                warning.id = 'doctorNameWarning';
+                warning.style.color = '#dc2626';
+                warning.style.fontWeight = 'bold';
+                warning.style.marginTop = '0.5rem';
+                document.getElementById('doctorName').parentElement.appendChild(warning);
+            }
+            warning.textContent = 'Please update your profile with your real information!';
         }
 
         // Load dashboard data
@@ -343,6 +429,8 @@
                 const userId = localStorage.getItem('userId');
                 const token = localStorage.getItem('token');
                 
+                console.log('Loading doctor patient appointments for userId:', userId);
+                
                 // Fetch appointments where the logged-in doctor is the assigned doctor
                 const response = await fetch(`http://localhost:5000/api/appointments/doctor/${userId}`, {
                     headers: {
@@ -350,10 +438,14 @@
                     }
                 });
                 
+                console.log('Doctor appointments response status:', response.status);
+                
                 if (response.ok) {
                     const appointments = await response.json();
+                    console.log('Doctor appointments loaded:', appointments);
                     displayDoctorPatientAppointments(appointments);
                 } else {
+                    console.log('Failed to fetch doctor appointments, using mock data');
                     // Fallback to mock data for demonstration
                     const mockAppointments = generateMockDoctorAppointments();
                     displayDoctorPatientAppointments(mockAppointments);
@@ -398,36 +490,119 @@
 
         // Display doctor's patient appointments
         function displayDoctorPatientAppointments(appointments) {
+            console.log('Displaying doctor patient appointments:', appointments);
             const doctorAppointmentsList = document.getElementById('doctorAppointmentsList');
-            doctorAppointmentsList.innerHTML = '';
             
-            if (appointments.length === 0) {
-                doctorAppointmentsList.innerHTML = '<p class="no-data">No patient appointments found.</p>';
+            if (!doctorAppointmentsList) {
+                console.error('Could not find doctorAppointmentsList element');
                 return;
             }
             
-            appointments.forEach(appointment => {
+            // Store appointments globally for filtering
+            window.allDoctorAppointments = appointments;
+            
+            // Apply filter
+            applyAppointmentFilter();
+        }
+
+        // Apply appointment filter
+        function applyAppointmentFilter() {
+            const filterValue = document.getElementById('appointmentFilter').value;
+            const doctorAppointmentsList = document.getElementById('doctorAppointmentsList');
+            const appointments = window.allDoctorAppointments || [];
+            
+            // Filter appointments based on selection
+            let filteredAppointments = appointments;
+            if (filterValue === 'active') {
+                filteredAppointments = appointments.filter(appointment => appointment.status !== 'cancelled');
+            } else if (filterValue === 'cancelled') {
+                filteredAppointments = appointments.filter(appointment => appointment.status === 'cancelled');
+            }
+            
+            doctorAppointmentsList.innerHTML = '';
+            
+            if (filteredAppointments.length === 0) {
+                const filterText = filterValue === 'all' ? 'No patient appointments found.' : 
+                                 filterValue === 'active' ? 'No active appointments found.' : 
+                                 'No cancelled appointments found.';
+                doctorAppointmentsList.innerHTML = `<p class="no-data">${filterText}</p>`;
+                return;
+            }
+            
+            filteredAppointments.forEach(appointment => {
                 const appointmentCard = document.createElement('div');
-                appointmentCard.className = 'appointment-card doctor-appointment-card';
+                appointmentCard.className = `appointment-card doctor-appointment-card ${appointment.status === 'cancelled' ? 'cancelled-appointment' : ''}`;
+                
+                // Format date and time
+                const appointmentDate = new Date(appointment.slot);
+                const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                const formattedTime = appointmentDate.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                // Get status color and icon
+                const statusConfig = getStatusConfig(appointment.status);
+                
                 appointmentCard.innerHTML = `
                     <div class="appointment-header">
-                        <h3>${appointment.patient ? appointment.patient.name : 'Patient'}</h3>
-                        <span class="status ${appointment.status}">${appointment.status}</span>
+                        <div class="patient-info">
+                            <h3>${appointment.patient ? appointment.patient.name : 'Patient'}</h3>
+                            <p class="patient-email">${appointment.patient ? appointment.patient.email : 'No email'}</p>
+                        </div>
+                        <div class="status-badge ${appointment.status}">
+                            <i class="${statusConfig.icon}"></i>
+                            <span>${statusConfig.label}</span>
+                        </div>
                     </div>
                     <div class="appointment-details">
-                        <p><i class="fas fa-user"></i> ${appointment.patient ? appointment.patient.email : 'No email'}</p>
-                        <p><i class="fas fa-calendar"></i> ${new Date(appointment.slot).toLocaleDateString()}</p>
-                        <p><i class="fas fa-clock"></i> ${new Date(appointment.slot).toLocaleTimeString()}</p>
-                        <p><i class="fas fa-hospital"></i> ${appointment.clinic ? appointment.clinic.name : 'Clinic'}</p>
-                        ${appointment.notes ? `<p><i class="fas fa-sticky-note"></i> ${appointment.notes}</p>` : ''}
+                        <div class="detail-row">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>${formattedDate}</span>
+                        </div>
+                        <div class="detail-row">
+                            <i class="fas fa-clock"></i>
+                            <span>${formattedTime}</span>
+                        </div>
+                        <div class="detail-row">
+                            <i class="fas fa-hospital"></i>
+                            <span>${appointment.clinic ? appointment.clinic.name : 'Clinic'}</span>
+                        </div>
+                        ${appointment.notes ? `
+                        <div class="detail-row">
+                            <i class="fas fa-sticky-note"></i>
+                            <span>${appointment.notes}</span>
+                        </div>
+                        ` : ''}
+                        ${appointment.status === 'cancelled' ? `
+                        <div class="detail-row cancelled-info">
+                            <i class="fas fa-info-circle"></i>
+                            <span>This slot is now available for other patients</span>
+                        </div>
+                        ` : ''}
                     </div>
                     <div class="appointment-actions">
+                        ${appointment.status !== 'cancelled' ? `
                         <button class="btn btn-success btn-sm update-status" data-appointment-id="${appointment._id}" data-current-status="${appointment.status}">
-                            <i class="fas fa-check"></i> Update Status
+                            <i class="fas fa-check"></i> ${statusConfig.nextAction}
                         </button>
                         <button class="btn btn-info btn-sm view-patient" data-appointment-id="${appointment._id}">
                             <i class="fas fa-eye"></i> View Details
                         </button>
+                        <button class="btn btn-warning btn-sm reschedule-appointment" data-appointment-id="${appointment._id}">
+                            <i class="fas fa-calendar-plus"></i> Reschedule
+                        </button>
+                        ` : `
+                        <button class="btn btn-info btn-sm view-patient" data-appointment-id="${appointment._id}">
+                            <i class="fas fa-eye"></i> View Details
+                        </button>
+                        <span class="cancelled-note">Appointment cancelled by patient</span>
+                        `}
                     </div>
                 `;
                 doctorAppointmentsList.appendChild(appointmentCard);
@@ -441,6 +616,41 @@
             document.querySelectorAll('.view-patient').forEach(button => {
                 button.addEventListener('click', viewPatientDetails);
             });
+
+            document.querySelectorAll('.reschedule-appointment').forEach(button => {
+                button.addEventListener('click', rescheduleAppointment);
+            });
+        }
+
+        // Get status configuration for display
+        function getStatusConfig(status) {
+            const configs = {
+                'pending': {
+                    label: 'Pending',
+                    icon: 'fas fa-clock',
+                    nextAction: 'Confirm',
+                    color: '#f59e0b'
+                },
+                'confirmed': {
+                    label: 'Confirmed',
+                    icon: 'fas fa-check-circle',
+                    nextAction: 'Complete',
+                    color: '#10b981'
+                },
+                'completed': {
+                    label: 'Completed',
+                    icon: 'fas fa-check-double',
+                    nextAction: 'Reopen',
+                    color: '#059669'
+                },
+                'cancelled': {
+                    label: 'Cancelled',
+                    icon: 'fas fa-times-circle',
+                    nextAction: 'Reopen',
+                    color: '#dc2626'
+                }
+            };
+            return configs[status] || configs['pending'];
         }
 
         // Populate doctors grid
@@ -684,7 +894,7 @@
             };
             
             try {
-                const response = await fetch(`http://localhost:5000/api/doctors/profile`, {
+                const response = await fetch(`http://localhost:5000/api/doctors/profile/me`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -726,7 +936,7 @@
                 });
                 
                 if (response.ok) {
-                    showToast('Appointment cancelled successfully!', 'success');
+                    showToast('Appointment cancelled successfully! The time slot is now available for other patients.', 'success');
                     // Refresh appointments list
                     loadDashboardData();
                 } else {
@@ -775,15 +985,96 @@
         function viewPatientDetails(event) {
             const appointmentId = event.target.closest('.view-patient').dataset.appointmentId;
             
-            // For now, show a simple alert with appointment details
-            // In a real application, this would open a modal with detailed patient information
-            showToast('Patient details feature coming soon!', 'info');
+            // Find the appointment data
+            const appointmentCard = event.target.closest('.appointment-card');
+            const patientName = appointmentCard.querySelector('.patient-info h3').textContent;
+            const patientEmail = appointmentCard.querySelector('.patient-email').textContent;
+            const appointmentDate = appointmentCard.querySelector('.detail-row span').textContent;
+            const appointmentTime = appointmentCard.querySelectorAll('.detail-row span')[1].textContent;
+            const clinicName = appointmentCard.querySelectorAll('.detail-row span')[2].textContent;
+            
+            // Create a modal to show patient details
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Patient Details</h3>
+                        <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div class="patient-detail-item">
+                            <label>Patient Name:</label>
+                            <span>${patientName}</span>
+                        </div>
+                        <div class="patient-detail-item">
+                            <label>Email:</label>
+                            <span>${patientEmail}</span>
+                        </div>
+                        <div class="patient-detail-item">
+                            <label>Appointment Date:</label>
+                            <span>${appointmentDate}</span>
+                        </div>
+                        <div class="patient-detail-item">
+                            <label>Appointment Time:</label>
+                            <span>${appointmentTime}</span>
+                        </div>
+                        <div class="patient-detail-item">
+                            <label>Clinic:</label>
+                            <span>${clinicName}</span>
+                        </div>
+                        <div class="patient-detail-item">
+                            <label>Appointment ID:</label>
+                            <span>${appointmentId}</span>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
+                        <button class="btn btn-primary" onclick="sendReminder('${patientEmail}', '${appointmentDate}', '${appointmentTime}')">
+                            <i class="fas fa-envelope"></i> Send Reminder
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            modal.style.display = 'block';
+        }
+
+        // Reschedule appointment function
+        function rescheduleAppointment(event) {
+            const appointmentId = event.target.closest('.reschedule-appointment').dataset.appointmentId;
+            
+            showToast('Reschedule feature coming soon! Please contact the patient directly.', 'info');
+        }
+
+        // Send reminder function
+        function sendReminder(email, date, time) {
+            showToast(`Reminder sent to ${email} for appointment on ${date} at ${time}`, 'success');
+            // In a real application, this would send an actual email
         }
 
         // Initialize dashboard
         checkAuth();
         loadUserRole();
         loadDashboardData();
+
+        // Add event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const bookNewAppointmentBtn = document.getElementById('bookNewAppointmentBtn');
+            if (bookNewAppointmentBtn) {
+                bookNewAppointmentBtn.addEventListener('click', function() {
+                    // Open appointments page in a new tab or redirect
+                    window.open('appointments.html', '_blank');
+                });
+            }
+
+            // Add filter event listener
+            const appointmentFilter = document.getElementById('appointmentFilter');
+            if (appointmentFilter) {
+                appointmentFilter.addEventListener('change', applyAppointmentFilter);
+            }
+        });
     </script>
 
     <style>
@@ -896,6 +1187,176 @@
             color: #64748b;
             margin-bottom: 1.5rem;
             font-style: italic;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+        }
+
+        .patient-info h3 {
+            margin: 0 0 0.25rem 0;
+            color: #1e293b;
+            font-size: 1.1rem;
+        }
+
+        .patient-email {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-badge.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-badge.confirmed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.completed {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-badge.cancelled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Section Actions */
+        .section-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .filter-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-controls label {
+            font-weight: 500;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+
+        .filter-select {
+            padding: 0.5rem 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.875rem;
+            color: #374151;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        /* Cancelled Appointment Styles */
+        .cancelled-appointment {
+            opacity: 0.7;
+            border-left: 4px solid #dc2626;
+            background: #fef2f2;
+        }
+
+        .cancelled-appointment .appointment-header {
+            opacity: 0.8;
+        }
+
+        .cancelled-info {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 0.5rem;
+            border-radius: 6px;
+            margin-top: 0.5rem;
+        }
+
+        .cancelled-info i {
+            color: #f59e0b;
+        }
+
+        .cancelled-note {
+            color: #dc2626;
+            font-size: 0.875rem;
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cancelled-note::before {
+            content: "⚠️";
+            font-size: 1rem;
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-row i {
+            color: #64748b;
+            width: 16px;
+        }
+
+        .detail-row span {
+            color: #374151;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .patient-detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .patient-detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .patient-detail-item label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .patient-detail-item span {
+            color: #64748b;
+        }
+
+        .modal-body {
+            padding: 2rem;
         }
 
         /* Modal Styles */
