@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ClinicPlus</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-heartbeat"></i>
+                <span>ClinicPlus</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="#appointments" class="nav-link">Appointments</a></li>
+                <li><a href="#doctors" class="nav-link">Doctors</a></li>
+                <li><a href="#clinics" class="nav-link">Clinics</a></li>
+                <li><a href="#" class="nav-link" id="logoutBtn">Logout</a></li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard -->
+    <div class="dashboard">
+        <div class="dashboard-header">
+            <div class="container">
+                <h1 id="welcomeMessage">Welcome to Your Dashboard</h1>
+                <p id="dashboardSubtitle">Manage your healthcare appointments and information</p>
+                <a href="appointments.html" class="btn btn-primary" id="bookAppointmentBtn" style="display:none; margin-top: 1rem;">
+                    <i class="fas fa-calendar-check"></i> Book Appointment
+                </a>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="container">
+                <!-- Quick Stats -->
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <i class="fas fa-calendar-check"></i>
+                            <h3 id="appointmentTitle">My Appointments</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="stat-number" id="appointmentCount">0</div>
+                            <div class="stat-label" id="appointmentLabel">Upcoming</div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <i class="fas fa-user-md"></i>
+                            <h3 id="doctorTitle">Available Doctors</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="stat-number" id="doctorCount">0</div>
+                            <div class="stat-label" id="doctorLabel">Specialists</div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <i class="fas fa-hospital"></i>
+                            <h3 id="clinicTitle">Nearby Clinics</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="stat-number" id="clinicCount">0</div>
+                            <div class="stat-label" id="clinicLabel">Locations</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Doctor Profile Section (for doctors only) -->
+                <div id="doctorProfileSection" class="dashboard-section" style="display: none;">
+                    <h2>My Doctor Profile</h2>
+                    <div class="doctor-profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            <div class="profile-info">
+                                <h3 id="doctorName">Dr. Info</h3>
+                                <p id="doctorSpecialization">Specialization</p>
+                                <p id="doctorClinic">Clinic</p>
+                            </div>
+                        </div>
+                        <div class="profile-details">
+                            <div class="detail-item">
+                                <span class="label">License:</span>
+                                <span id="doctorLicense">License Number</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Experience:</span>
+                                <span id="doctorExperience">0 years</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Education:</span>
+                                <span id="doctorEducation">Education</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Phone:</span>
+                                <span id="doctorPhone">Phone</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" id="editProfileBtn">
+                            <i class="fas fa-edit"></i>
+                            Edit Profile
+                        </button>
+                    </div>
+                </div>
+
+                <!-- My Appointments Section -->
+                <section class="dashboard-section">
+                    <h2 id="myAppointmentsTitle">My Appointments</h2>
+                    <div class="appointments-list" id="appointmentsList">
+                        <!-- Appointments will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Available Doctors Section -->
+                <section id="doctors" class="dashboard-section">
+                    <h2>Available Doctors</h2>
+                    <div class="doctors-grid" id="doctorsGrid">
+                        <!-- Doctors will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Clinics Section -->
+                <section id="clinics" class="dashboard-section">
+                    <h2>Nearby Clinics</h2>
+                    <div class="clinics-grid" id="clinicsGrid">
+                        <!-- Clinics will be loaded here -->
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+        }
+
+        // Load user role and update UI
+        function loadUserRole() {
+            const userRole = localStorage.getItem('userRole');
+            const userName = localStorage.getItem('userName');
+            
+            if (userRole === 'doctor') {
+                document.getElementById('welcomeMessage').textContent = `Welcome, Dr. ${userName}`;
+                document.getElementById('dashboardSubtitle').textContent = 'Manage your practice and patient appointments';
+                
+                // Update stats titles for doctors
+                document.getElementById('appointmentTitle').textContent = 'Patient Appointments';
+                document.getElementById('appointmentLabel').textContent = 'Scheduled';
+                document.getElementById('doctorTitle').textContent = 'My Practice';
+                document.getElementById('doctorLabel').textContent = 'Specialization';
+                document.getElementById('clinicTitle').textContent = 'My Clinic';
+                document.getElementById('clinicLabel').textContent = 'Location';
+                
+                // Show doctor profile section
+                document.getElementById('doctorProfileSection').style.display = 'block';
+                
+                // Hide booking form for doctors
+                document.getElementById('appointments').style.display = 'none';
+                
+                // Load doctor profile
+                fetchDoctorProfileAndLoad();
+                document.getElementById('bookAppointmentBtn').style.display = 'none';
+            } else {
+                document.getElementById('welcomeMessage').textContent = `Welcome, ${userName}`;
+                document.getElementById('myAppointmentsTitle').textContent = 'My Appointments';
+                document.getElementById('bookAppointmentBtn').style.display = 'inline-block';
+            }
+        }
+
+        async function fetchDoctorProfileAndLoad() {
+            const userId = localStorage.getItem('userId');
+            const token = localStorage.getItem('token');
+            if (!userId || !token) return;
+            try {
+                const response = await fetch(`http://localhost:5000/api/doctors/user/${userId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const profile = await response.json();
+                    localStorage.setItem('doctorProfile', JSON.stringify(profile));
+                }
+            } catch (err) {
+                console.error('Failed to fetch latest doctor profile:', err);
+            }
+            loadDoctorProfile();
+        }
+
+        // Load doctor profile
+        function loadDoctorProfile() {
+            const doctorProfile = localStorage.getItem('doctorProfile');
+            if (doctorProfile) {
+                const profile = JSON.parse(doctorProfile);
+                
+                document.getElementById('doctorName').textContent = profile.name;
+                document.getElementById('doctorSpecialization').textContent = profile.specialization;
+                document.getElementById('doctorClinic').textContent = profile.clinic ? profile.clinic.name : 'Not assigned';
+                document.getElementById('doctorLicense').textContent = profile.licenseNumber || 'Not provided';
+                document.getElementById('doctorExperience').textContent = `${profile.experience || 0} years`;
+                document.getElementById('doctorEducation').textContent = profile.education || 'Not provided';
+                document.getElementById('doctorPhone').textContent = profile.phone || 'Not provided';
+                // Fallback: Show warning if name is missing or 'Name'
+                let warning = document.getElementById('doctorNameWarning');
+                if (!warning) {
+                    warning = document.createElement('div');
+                    warning.id = 'doctorNameWarning';
+                    warning.style.color = '#dc2626';
+                    warning.style.fontWeight = 'bold';
+                    warning.style.marginTop = '0.5rem';
+                    document.getElementById('doctorName').parentElement.appendChild(warning);
+                }
+                if (!profile.name || profile.name.trim().toLowerCase() === 'name') {
+                    warning.textContent = 'Please update your profile with your real name!';
+                } else {
+                    warning.textContent = '';
+                }
+            }
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Load appointments
+                const appointmentsResponse = await fetch('http://localhost:5000/api/appointments/my', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                const appointments = await appointmentsResponse.json();
+                document.getElementById('appointmentCount').textContent = appointments.length;
+
+                // Load doctors
+                const doctorsResponse = await fetch('http://localhost:5000/api/doctors');
+                const doctors = await doctorsResponse.json();
+                document.getElementById('doctorCount').textContent = doctors.length;
+                populateDoctorsGrid(doctors);
+
+                // Load clinics
+                const clinicsResponse = await fetch('http://localhost:5000/api/clinics');
+                const clinics = await clinicsResponse.json();
+                document.getElementById('clinicCount').textContent = clinics.length;
+                populateClinicsGrid(clinics);
+
+                // Load appointments list
+                loadAppointmentsList(appointments);
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        // Populate doctors grid
+        function populateDoctorsGrid(doctors) {
+            const doctorsGrid = document.getElementById('doctorsGrid');
+            doctorsGrid.innerHTML = '';
+            
+            doctors.forEach(doctor => {
+                const doctorCard = document.createElement('div');
+                doctorCard.className = 'doctor-card';
+                doctorCard.innerHTML = `
+                    <div class="doctor-avatar">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div class="doctor-info">
+                        <h3>${doctor.name}</h3>
+                        <p class="specialization">${doctor.specialization}</p>
+                        <p class="clinic">${doctor.clinic ? doctor.clinic.name : 'Clinic not assigned'}</p>
+                        ${doctor.experience ? `<p class="experience">${doctor.experience} years experience</p>` : ''}
+                    </div>
+                `;
+                doctorsGrid.appendChild(doctorCard);
+            });
+        }
+
+        // Populate clinics grid
+        function populateClinicsGrid(clinics) {
+            const clinicsGrid = document.getElementById('clinicsGrid');
+            clinicsGrid.innerHTML = '';
+            
+            clinics.forEach(clinic => {
+                const clinicCard = document.createElement('div');
+                clinicCard.className = 'clinic-card';
+                clinicCard.innerHTML = `
+                    <div class="clinic-icon">
+                        <i class="fas fa-hospital"></i>
+                    </div>
+                    <div class="clinic-info">
+                        <h3>${clinic.name}</h3>
+                        <p>${clinic.location}</p>
+                    </div>
+                `;
+                clinicsGrid.appendChild(clinicCard);
+            });
+        }
+
+        // Load appointments list
+        function loadAppointmentsList(appointments) {
+            const appointmentsList = document.getElementById('appointmentsList');
+            appointmentsList.innerHTML = '';
+            
+            if (appointments.length === 0) {
+                appointmentsList.innerHTML = '<p class="no-data">No appointments found.</p>';
+                return;
+            }
+            
+            appointments.forEach(appointment => {
+                const appointmentCard = document.createElement('div');
+                appointmentCard.className = 'appointment-card';
+                appointmentCard.innerHTML = `
+                    <div class="appointment-header">
+                        <h3>${appointment.doctor ? appointment.doctor.name : 'Doctor'}</h3>
+                        <span class="status ${appointment.status}">${appointment.status}</span>
+                    </div>
+                    <div class="appointment-details">
+                        <p><i class="fas fa-calendar"></i> ${new Date(appointment.slot).toLocaleDateString()}</p>
+                        <p><i class="fas fa-clock"></i> ${new Date(appointment.slot).toLocaleTimeString()}</p>
+                        <p><i class="fas fa-hospital"></i> ${appointment.clinic ? appointment.clinic.name : 'Clinic'}</p>
+                    </div>
+                `;
+                appointmentsList.appendChild(appointmentCard);
+            });
+        }
+
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        });
+
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Initialize dashboard
+        checkAuth();
+        loadUserRole();
+        loadDashboardData();
+    </script>
+
+    <style>
+        .doctor-profile-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            margin-right: 1.5rem;
+        }
+
+        .profile-info h3 {
+            margin: 0 0 0.5rem 0;
+            color: #1e293b;
+        }
+
+        .profile-info p {
+            margin: 0.25rem 0;
+            color: #64748b;
+        }
+
+        .profile-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .detail-item .label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .toast {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</body>
+</html> 
