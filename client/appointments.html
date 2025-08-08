@@ -19,8 +19,8 @@
             <ul class="nav-menu">
                 <li><a href="index.html" class="nav-link">Home</a></li>
                 <li><a href="dashboard.html" class="nav-link">Dashboard</a></li>
-                <li><a href="login.html" class="nav-link btn-login">Login</a></li>
-                <li><a href="register.html" class="nav-link btn-register">Register</a></li>
+                <li><a href="login.html" class="nav-link btn-login" id="loginLink">Login</a></li>
+                <li><a href="register.html" class="nav-link btn-register" id="registerLink">Register</a></li>
             </ul>
             <div class="hamburger">
                 <span class="bar"></span>
@@ -118,8 +118,10 @@
         </div>
     </div>
 
+    <script src="script.js"></script>
     <script>
         // Load clinics and doctors
+        let allDoctors = [];
         async function loadBookingData() {
             try {
                 // Load clinics
@@ -129,9 +131,9 @@
 
                 // Load doctors
                 const doctorsResponse = await fetch('http://localhost:5000/api/doctors');
-                const doctors = await doctorsResponse.json();
-                populateDoctorSelect(doctors);
-
+                allDoctors = await doctorsResponse.json();
+                // Initially populate with all doctors (or none)
+                populateDoctorSelect([]);
             } catch (error) {
                 console.error('Error loading booking data:', error);
             }
@@ -140,19 +142,27 @@
         function populateClinicSelect(clinics) {
             const clinicSelect = document.getElementById('clinic');
             clinicSelect.innerHTML = '<option value="">Choose a clinic</option>';
-            
             clinics.forEach(clinic => {
                 const option = document.createElement('option');
                 option.value = clinic._id;
                 option.textContent = clinic.name;
                 clinicSelect.appendChild(option);
             });
+            // Add event listener to filter doctors when clinic changes
+            clinicSelect.addEventListener('change', function() {
+                const selectedClinicId = this.value;
+                if (selectedClinicId) {
+                    const filteredDoctors = allDoctors.filter(doc => doc.clinic && doc.clinic._id === selectedClinicId);
+                    populateDoctorSelect(filteredDoctors);
+                } else {
+                    populateDoctorSelect([]);
+                }
+            });
         }
 
         function populateDoctorSelect(doctors) {
             const doctorSelect = document.getElementById('doctor');
             doctorSelect.innerHTML = '<option value="">Choose a doctor</option>';
-            
             doctors.forEach(doctor => {
                 const option = document.createElement('option');
                 option.value = doctor._id;
@@ -193,7 +203,7 @@
             const notes = document.getElementById('notes').value;
 
             if (!clinic || !doctor || !date || !time) {
-                showToast('Please fill in all required fields', 'error');
+                window.showToast('Please fill in all required fields', 'error');
                 return;
             }
 
@@ -202,7 +212,7 @@
             // Check if user is logged in
             const token = localStorage.getItem('token');
             if (!token) {
-                showToast('Please login to book an appointment', 'error');
+                window.showToast('Please login to book an appointment', 'error');
                 setTimeout(() => {
                     window.location.href = 'login.html';
                 }, 2000);
@@ -225,7 +235,7 @@
                 });
 
                 if (response.ok) {
-                    showToast('Appointment booked successfully!', 'success');
+                    window.showToast('Appointment booked successfully!', 'success');
                     // Reset form
                     document.getElementById('clinic').value = '';
                     document.getElementById('doctor').value = '';
@@ -234,11 +244,23 @@
                     document.getElementById('notes').value = '';
                 } else {
                     const error = await response.text();
-                    showToast(`Booking failed: ${error}`, 'error');
+                    window.showToast(`Booking failed: ${error}`, 'error');
+                    console.log('Booking error:', error); // Debug log
                 }
             } catch (error) {
                 console.error('Error booking appointment:', error);
-                showToast('An error occurred while booking the appointment.', 'error');
+                window.showToast('An error occurred while booking the appointment.', 'error');
+            }
+        });
+
+        // Hide login/register links if logged in
+        window.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                const loginLink = document.getElementById('loginLink');
+                const registerLink = document.getElementById('registerLink');
+                if (loginLink) loginLink.style.display = 'none';
+                if (registerLink) registerLink.style.display = 'none';
             }
         });
 
