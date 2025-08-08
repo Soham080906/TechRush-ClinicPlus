@@ -2,6 +2,9 @@ const express = require('express');
 const Clinic = require('../models/Clinic');
 const router = express.Router();
 
+const auth = require('../middleware/authMiddleware');
+const { isAdmin } = require('../middleware/authMiddleware');
+
 // Get all clinics
 router.get('/', async (req, res) => {
   try {
@@ -28,7 +31,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Add new clinic
-router.post('/', async (req, res) => {
+router.post('/', auth, isAdmin, async (req, res) => {
   try {
     const { name, location } = req.body;
     
@@ -61,7 +64,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update clinic
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, isAdmin, async (req, res) => {
   try {
     const { name, location } = req.body;
     
@@ -90,7 +93,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete clinic
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, isAdmin, async (req, res) => {
   try {
     const clinic = await Clinic.findByIdAndDelete(req.params.id);
     

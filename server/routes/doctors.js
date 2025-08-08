@@ -2,6 +2,7 @@ const express = require('express');
 const Doctor = require('../models/Doctor');
 const router = express.Router();
 const auth = require('../middleware/authMiddleware');
+const { isAdmin } = require('../middleware/authMiddleware');
 
 // Get all doctors with clinic and user info
 router.get('/', async (req, res) => {
@@ -19,7 +20,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const doctor = await Doctor.findById(req.params.id)
-      .populate('clinic')
+    .populate('clinic')
       .populate('user', 'name email');
     if (!doctor) {
       return res.status(404).json({ error: 'Doctor not found' });
@@ -31,7 +32,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Add new doctor (for admin use)
-router.post('/', async (req, res) => {
+router.post('/', auth, isAdmin, async (req, res) => {
   try {
     const doctor = new Doctor(req.body);
     await doctor.save();
@@ -42,7 +43,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update doctor profile
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, isAdmin, async (req, res) => {
   try {
     const doctor = await Doctor.findByIdAndUpdate(
       req.params.id,

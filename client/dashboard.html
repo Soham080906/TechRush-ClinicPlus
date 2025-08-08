@@ -37,6 +37,9 @@
             <div class="container">
                 <h1 id="welcomeMessage">Welcome to Your Dashboard</h1>
                 <p id="dashboardSubtitle">Manage your healthcare appointments and information</p>
+                <a href="appointments.html" class="btn btn-primary" id="bookAppointmentBtn" style="display:none; margin-top: 1rem;">
+                    <i class="fas fa-calendar-check"></i> Book Appointment
+                </a>
             </div>
         </div>
 
@@ -87,7 +90,7 @@
                                 <i class="fas fa-user-md"></i>
                             </div>
                             <div class="profile-info">
-                                <h3 id="doctorName">Dr. Name</h3>
+                                <h3 id="doctorName">Dr. Info</h3>
                                 <p id="doctorSpecialization">Specialization</p>
                                 <p id="doctorClinic">Clinic</p>
                             </div>
@@ -116,45 +119,6 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- Appointment Booking Section (for patients only) -->
-                <section id="appointments" class="dashboard-section">
-                    <h2>Book New Appointment</h2>
-                    <div class="booking-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="clinic">Select Clinic</label>
-                                <select id="clinic" name="clinic" required>
-                                    <option value="">Choose a clinic</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="doctor">Select Doctor</label>
-                                <select id="doctor" name="doctor" required>
-                                    <option value="">Choose a doctor</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="date">Appointment Date</label>
-                                <input type="date" id="date" name="date" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="time">Appointment Time</label>
-                                <input type="time" id="time" name="time" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="notes">Additional Notes (Optional)</label>
-                            <textarea id="notes" name="notes" rows="3" placeholder="Any special requirements or notes for your appointment..."></textarea>
-                        </div>
-                        <button type="button" class="btn btn-primary" id="bookAppointment">
-                            <i class="fas fa-calendar-plus"></i>
-                            Book Appointment
-                        </button>
-                    </div>
-                </section>
 
                 <!-- My Appointments Section -->
                 <section class="dashboard-section">
@@ -217,11 +181,31 @@
                 document.getElementById('appointments').style.display = 'none';
                 
                 // Load doctor profile
-                loadDoctorProfile();
+                fetchDoctorProfileAndLoad();
+                document.getElementById('bookAppointmentBtn').style.display = 'none';
             } else {
                 document.getElementById('welcomeMessage').textContent = `Welcome, ${userName}`;
                 document.getElementById('myAppointmentsTitle').textContent = 'My Appointments';
+                document.getElementById('bookAppointmentBtn').style.display = 'inline-block';
             }
+        }
+
+        async function fetchDoctorProfileAndLoad() {
+            const userId = localStorage.getItem('userId');
+            const token = localStorage.getItem('token');
+            if (!userId || !token) return;
+            try {
+                const response = await fetch(`http://localhost:5000/api/doctors/user/${userId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const profile = await response.json();
+                    localStorage.setItem('doctorProfile', JSON.stringify(profile));
+                }
+            } catch (err) {
+                console.error('Failed to fetch latest doctor profile:', err);
+            }
+            loadDoctorProfile();
         }
 
         // Load doctor profile
@@ -237,6 +221,21 @@
                 document.getElementById('doctorExperience').textContent = `${profile.experience || 0} years`;
                 document.getElementById('doctorEducation').textContent = profile.education || 'Not provided';
                 document.getElementById('doctorPhone').textContent = profile.phone || 'Not provided';
+                // Fallback: Show warning if name is missing or 'Name'
+                let warning = document.getElementById('doctorNameWarning');
+                if (!warning) {
+                    warning = document.createElement('div');
+                    warning.id = 'doctorNameWarning';
+                    warning.style.color = '#dc2626';
+                    warning.style.fontWeight = 'bold';
+                    warning.style.marginTop = '0.5rem';
+                    document.getElementById('doctorName').parentElement.appendChild(warning);
+                }
+                if (!profile.name || profile.name.trim().toLowerCase() === 'name') {
+                    warning.textContent = 'Please update your profile with your real name!';
+                } else {
+                    warning.textContent = '';
+                }
             }
         }
 
@@ -343,56 +342,6 @@
                 appointmentsList.appendChild(appointmentCard);
             });
         }
-
-        // Book appointment functionality
-        document.getElementById('bookAppointment').addEventListener('click', async () => {
-            const clinic = document.getElementById('clinic').value;
-            const doctor = document.getElementById('doctor').value;
-            const date = document.getElementById('date').value;
-            const time = document.getElementById('time').value;
-            const notes = document.getElementById('notes').value;
-
-            if (!clinic || !doctor || !date || !time) {
-                showToast('Please fill in all required fields', 'error');
-                return;
-            }
-
-            const slot = new Date(`${date}T${time}`);
-
-            try {
-                const response = await fetch('http://localhost:5000/api/appointments', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify({
-                        clinic,
-                        doctor,
-                        slot: slot.toISOString(),
-                        notes
-                    })
-                });
-
-                if (response.ok) {
-                    showToast('Appointment booked successfully!', 'success');
-                    // Reset form
-                    document.getElementById('clinic').value = '';
-                    document.getElementById('doctor').value = '';
-                    document.getElementById('date').value = '';
-                    document.getElementById('time').value = '';
-                    document.getElementById('notes').value = '';
-                    // Reload appointments
-                    loadDashboardData();
-                } else {
-                    const error = await response.text();
-                    showToast(`Booking failed: ${error}`, 'error');
-                }
-            } catch (error) {
-                console.error('Error booking appointment:', error);
-                showToast('An error occurred while booking the appointment.', 'error');
-            }
-        });
 
         // Logout functionality
         document.getElementById('logoutBtn').addEventListener('click', () => {
