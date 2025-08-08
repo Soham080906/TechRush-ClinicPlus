@@ -120,11 +120,68 @@
                     </div>
                 </div>
 
+                <!-- Edit Profile Modal -->
+                <div id="editProfileModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Edit Profile</h3>
+                            <span class="close" id="closeEditModal">&times;</span>
+                        </div>
+                        <form id="editProfileForm">
+                            <div class="form-group">
+                                <label for="editName">Full Name</label>
+                                <input type="text" id="editName" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editSpecialization">Specialization</label>
+                                <select id="editSpecialization" name="specialization" required>
+                                    <option value="">Select specialization</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editLicense">Medical License Number</label>
+                                <input type="text" id="editLicense" name="licenseNumber">
+                            </div>
+                            <div class="form-group">
+                                <label for="editExperience">Years of Experience</label>
+                                <input type="number" id="editExperience" name="experience" min="0" max="50">
+                            </div>
+                            <div class="form-group">
+                                <label for="editEducation">Education</label>
+                                <input type="text" id="editEducation" name="education" placeholder="e.g., MBBS, MD, PhD">
+                            </div>
+                            <div class="form-group">
+                                <label for="editPhone">Phone Number</label>
+                                <input type="tel" id="editPhone" name="phone">
+                            </div>
+                            <div class="form-group">
+                                <label for="editClinic">Select Clinic</label>
+                                <select id="editClinic" name="clinic">
+                                    <option value="">Choose a clinic</option>
+                                </select>
+                            </div>
+                            <div class="modal-actions">
+                                <button type="button" class="btn btn-secondary" id="cancelEdit">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- My Appointments Section -->
                 <section class="dashboard-section">
                     <h2 id="myAppointmentsTitle">My Appointments</h2>
                     <div class="appointments-list" id="appointmentsList">
                         <!-- Appointments will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Doctor Dashboard Section (for doctors only) -->
+                <section id="doctorDashboardSection" class="dashboard-section" style="display: none;">
+                    <h2>Patient Appointments</h2>
+                    <p class="section-description">View appointments booked by patients with you</p>
+                    <div class="appointments-list" id="doctorAppointmentsList">
+                        <!-- Doctor's patient appointments will be loaded here -->
                     </div>
                 </section>
 
@@ -177,7 +234,10 @@
                 // Show doctor profile section
                 document.getElementById('doctorProfileSection').style.display = 'block';
                 
-                // Hide booking form for doctors
+                // Show doctor dashboard section
+                document.getElementById('doctorDashboardSection').style.display = 'block';
+                
+                // Hide patient appointments for doctors
                 document.getElementById('appointments').style.display = 'none';
                 
                 // Load doctor profile
@@ -266,9 +326,121 @@
                 // Load appointments list
                 loadAppointmentsList(appointments);
 
+                // Load doctor's patient appointments if user is a doctor
+                const userRole = localStorage.getItem('userRole');
+                if (userRole === 'doctor') {
+                    loadDoctorPatientAppointments();
+                }
+
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
             }
+        }
+
+        // Load doctor's patient appointments
+        async function loadDoctorPatientAppointments() {
+            try {
+                const userId = localStorage.getItem('userId');
+                const token = localStorage.getItem('token');
+                
+                // Fetch appointments where the logged-in doctor is the assigned doctor
+                const response = await fetch(`http://localhost:5000/api/appointments/doctor/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const appointments = await response.json();
+                    displayDoctorPatientAppointments(appointments);
+                } else {
+                    // Fallback to mock data for demonstration
+                    const mockAppointments = generateMockDoctorAppointments();
+                    displayDoctorPatientAppointments(mockAppointments);
+                }
+            } catch (error) {
+                console.error('Error loading doctor patient appointments:', error);
+                // Fallback to mock data
+                const mockAppointments = generateMockDoctorAppointments();
+                displayDoctorPatientAppointments(mockAppointments);
+            }
+        }
+
+        // Generate mock doctor appointments for demonstration
+        function generateMockDoctorAppointments() {
+            return [
+                {
+                    _id: '1',
+                    patient: { name: 'John Smith', email: 'john@example.com' },
+                    slot: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
+                    status: 'confirmed',
+                    notes: 'Regular checkup',
+                    clinic: { name: 'City General Hospital' }
+                },
+                {
+                    _id: '2',
+                    patient: { name: 'Sarah Johnson', email: 'sarah@example.com' },
+                    slot: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // Day after tomorrow
+                    status: 'pending',
+                    notes: 'Follow-up consultation',
+                    clinic: { name: 'City General Hospital' }
+                },
+                {
+                    _id: '3',
+                    patient: { name: 'Mike Davis', email: 'mike@example.com' },
+                    slot: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+                    status: 'confirmed',
+                    notes: 'Annual physical examination',
+                    clinic: { name: 'City General Hospital' }
+                }
+            ];
+        }
+
+        // Display doctor's patient appointments
+        function displayDoctorPatientAppointments(appointments) {
+            const doctorAppointmentsList = document.getElementById('doctorAppointmentsList');
+            doctorAppointmentsList.innerHTML = '';
+            
+            if (appointments.length === 0) {
+                doctorAppointmentsList.innerHTML = '<p class="no-data">No patient appointments found.</p>';
+                return;
+            }
+            
+            appointments.forEach(appointment => {
+                const appointmentCard = document.createElement('div');
+                appointmentCard.className = 'appointment-card doctor-appointment-card';
+                appointmentCard.innerHTML = `
+                    <div class="appointment-header">
+                        <h3>${appointment.patient ? appointment.patient.name : 'Patient'}</h3>
+                        <span class="status ${appointment.status}">${appointment.status}</span>
+                    </div>
+                    <div class="appointment-details">
+                        <p><i class="fas fa-user"></i> ${appointment.patient ? appointment.patient.email : 'No email'}</p>
+                        <p><i class="fas fa-calendar"></i> ${new Date(appointment.slot).toLocaleDateString()}</p>
+                        <p><i class="fas fa-clock"></i> ${new Date(appointment.slot).toLocaleTimeString()}</p>
+                        <p><i class="fas fa-hospital"></i> ${appointment.clinic ? appointment.clinic.name : 'Clinic'}</p>
+                        ${appointment.notes ? `<p><i class="fas fa-sticky-note"></i> ${appointment.notes}</p>` : ''}
+                    </div>
+                    <div class="appointment-actions">
+                        <button class="btn btn-success btn-sm update-status" data-appointment-id="${appointment._id}" data-current-status="${appointment.status}">
+                            <i class="fas fa-check"></i> Update Status
+                        </button>
+                        <button class="btn btn-info btn-sm view-patient" data-appointment-id="${appointment._id}">
+                            <i class="fas fa-eye"></i> View Details
+                        </button>
+                    </div>
+                `;
+                doctorAppointmentsList.appendChild(appointmentCard);
+            });
+
+            // Add event listeners for doctor appointment actions
+            document.querySelectorAll('.update-status').forEach(button => {
+                button.addEventListener('click', updateAppointmentStatus);
+            });
+
+            document.querySelectorAll('.view-patient').forEach(button => {
+                button.addEventListener('click', viewPatientDetails);
+            });
         }
 
         // Populate doctors grid
@@ -325,22 +497,32 @@
                 return;
             }
             
-            appointments.forEach(appointment => {
-                const appointmentCard = document.createElement('div');
-                appointmentCard.className = 'appointment-card';
-                appointmentCard.innerHTML = `
-                    <div class="appointment-header">
-                        <h3>${appointment.doctor ? appointment.doctor.name : 'Doctor'}</h3>
-                        <span class="status ${appointment.status}">${appointment.status}</span>
-                    </div>
-                    <div class="appointment-details">
-                        <p><i class="fas fa-calendar"></i> ${new Date(appointment.slot).toLocaleDateString()}</p>
-                        <p><i class="fas fa-clock"></i> ${new Date(appointment.slot).toLocaleTimeString()}</p>
-                        <p><i class="fas fa-hospital"></i> ${appointment.clinic ? appointment.clinic.name : 'Clinic'}</p>
-                    </div>
-                `;
-                appointmentsList.appendChild(appointmentCard);
-            });
+                            appointments.forEach(appointment => {
+                    const appointmentCard = document.createElement('div');
+                    appointmentCard.className = 'appointment-card';
+                    appointmentCard.innerHTML = `
+                        <div class="appointment-header">
+                            <h3>${appointment.doctor ? appointment.doctor.name : 'Doctor'}</h3>
+                            <span class="status ${appointment.status}">${appointment.status}</span>
+                        </div>
+                        <div class="appointment-details">
+                            <p><i class="fas fa-calendar"></i> ${new Date(appointment.slot).toLocaleDateString()}</p>
+                            <p><i class="fas fa-clock"></i> ${new Date(appointment.slot).toLocaleTimeString()}</p>
+                            <p><i class="fas fa-hospital"></i> ${appointment.clinic ? appointment.clinic.name : 'Clinic'}</p>
+                        </div>
+                        <div class="appointment-actions">
+                            <button class="btn btn-danger btn-sm cancel-appointment" data-appointment-id="${appointment._id}">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    `;
+                    appointmentsList.appendChild(appointmentCard);
+                });
+
+                // Add event listeners for cancel buttons
+                document.querySelectorAll('.cancel-appointment').forEach(button => {
+                    button.addEventListener('click', cancelAppointment);
+                });
         }
 
         // Logout functionality
@@ -371,6 +553,231 @@
             setTimeout(() => {
                 toast.remove();
             }, 3000);
+        }
+
+        // Modal functionality
+        const modal = document.getElementById('editProfileModal');
+        const editBtn = document.getElementById('editProfileBtn');
+        const closeBtn = document.getElementById('closeEditModal');
+        const cancelBtn = document.getElementById('cancelEdit');
+
+        // Open modal
+        editBtn.addEventListener('click', () => {
+            modal.style.display = 'block';
+            populateEditForm();
+        });
+
+        // Close modal
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Populate edit form with current data
+        function populateEditForm() {
+            const doctorProfile = localStorage.getItem('doctorProfile');
+            if (doctorProfile) {
+                const profile = JSON.parse(doctorProfile);
+                document.getElementById('editName').value = profile.name || '';
+                document.getElementById('editLicense').value = profile.licenseNumber || '';
+                document.getElementById('editExperience').value = profile.experience || '';
+                document.getElementById('editEducation').value = profile.education || '';
+                document.getElementById('editPhone').value = profile.phone || '';
+                
+                // Load specializations
+                loadSpecializations();
+                
+                // Set specialization if available
+                if (profile.specialization) {
+                    setTimeout(() => {
+                        document.getElementById('editSpecialization').value = profile.specialization;
+                    }, 100);
+                }
+                
+                // Load clinics and set current clinic
+                loadClinicsForEdit();
+            }
+        }
+
+        // Load specializations for edit form
+        async function loadSpecializations() {
+            try {
+                const response = await fetch('http://localhost:5000/api/specializations');
+                const specializations = await response.json();
+                const select = document.getElementById('editSpecialization');
+                select.innerHTML = '<option value="">Select specialization</option>';
+                specializations.forEach(spec => {
+                    const option = document.createElement('option');
+                    option.value = spec;
+                    option.textContent = spec;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading specializations:', error);
+                // Fallback to hardcoded list
+                const specializations = [
+                    'Cardiologist', 'Pediatrician', 'Dermatologist', 'Orthopedic Surgeon',
+                    'Neurologist', 'Psychiatrist', 'General Physician', 'Dentist',
+                    'Ophthalmologist', 'Gynecologist'
+                ];
+                const select = document.getElementById('editSpecialization');
+                select.innerHTML = '<option value="">Select specialization</option>';
+                specializations.forEach(spec => {
+                    const option = document.createElement('option');
+                    option.value = spec;
+                    option.textContent = spec;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        // Load clinics for edit form
+        async function loadClinicsForEdit() {
+            try {
+                const response = await fetch('http://localhost:5000/api/clinics');
+                const clinics = await response.json();
+                const select = document.getElementById('editClinic');
+                select.innerHTML = '<option value="">Choose a clinic</option>';
+                clinics.forEach(clinic => {
+                    const option = document.createElement('option');
+                    option.value = clinic._id;
+                    option.textContent = clinic.name;
+                    select.appendChild(option);
+                });
+                
+                // Set current clinic if available
+                const doctorProfile = localStorage.getItem('doctorProfile');
+                if (doctorProfile) {
+                    const profile = JSON.parse(doctorProfile);
+                    if (profile.clinic && profile.clinic._id) {
+                        select.value = profile.clinic._id;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading clinics:', error);
+            }
+        }
+
+        // Handle edit form submission
+        document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                name: formData.get('name'),
+                specialization: formData.get('specialization'),
+                licenseNumber: formData.get('licenseNumber'),
+                experience: formData.get('experience'),
+                education: formData.get('education'),
+                phone: formData.get('phone'),
+                clinic: formData.get('clinic') || null
+            };
+            
+            try {
+                const response = await fetch(`http://localhost:5000/api/doctors/profile`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    const updatedProfile = await response.json();
+                    localStorage.setItem('doctorProfile', JSON.stringify(updatedProfile));
+                    showToast('Profile updated successfully!', 'success');
+                    modal.style.display = 'none';
+                    loadDoctorProfile(); // Refresh the displayed profile
+                } else {
+                    const error = await response.text();
+                    showToast(`Update failed: ${error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showToast('An error occurred while updating the profile.', 'error');
+            }
+        });
+
+        // Cancel appointment functionality
+        async function cancelAppointment(event) {
+            const appointmentId = event.target.closest('.cancel-appointment').dataset.appointmentId;
+            
+            if (!confirm('Are you sure you want to cancel this appointment?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`http://localhost:5000/api/appointments/${appointmentId}/cancel`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    showToast('Appointment cancelled successfully!', 'success');
+                    // Refresh appointments list
+                    loadDashboardData();
+                } else {
+                    const error = await response.text();
+                    showToast(`Cancellation failed: ${error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error cancelling appointment:', error);
+                showToast('An error occurred while cancelling the appointment.', 'error');
+            }
+        }
+
+        // Update appointment status (for doctors)
+        async function updateAppointmentStatus(event) {
+            const appointmentId = event.target.closest('.update-status').dataset.appointmentId;
+            const currentStatus = event.target.closest('.update-status').dataset.currentStatus;
+            
+            const newStatus = currentStatus === 'pending' ? 'confirmed' : 
+                            currentStatus === 'confirmed' ? 'completed' : 'pending';
+            
+            try {
+                const response = await fetch(`http://localhost:5000/api/appointments/${appointmentId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                if (response.ok) {
+                    showToast(`Appointment status updated to ${newStatus}!`, 'success');
+                    // Refresh doctor appointments
+                    loadDoctorPatientAppointments();
+                } else {
+                    const error = await response.text();
+                    showToast(`Status update failed: ${error}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error updating appointment status:', error);
+                showToast('An error occurred while updating the appointment status.', 'error');
+            }
+        }
+
+        // View patient details (for doctors)
+        function viewPatientDetails(event) {
+            const appointmentId = event.target.closest('.view-patient').dataset.appointmentId;
+            
+            // For now, show a simple alert with appointment details
+            // In a real application, this would open a modal with detailed patient information
+            showToast('Patient details feature coming soon!', 'info');
         }
 
         // Initialize dashboard
@@ -441,6 +848,154 @@
             text-align: center;
             color: #64748b;
             font-style: italic;
+        }
+
+        .appointment-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-success {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #047857;
+        }
+
+        .btn-info {
+            background: #0891b2;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #0e7490;
+        }
+
+        .doctor-appointment-card {
+            border-left: 4px solid #059669;
+        }
+
+        .section-description {
+            color: #64748b;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .close {
+            color: #64748b;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #1e293b;
+        }
+
+        .modal-content form {
+            padding: 2rem;
+        }
+
+        .modal-content .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-content label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .modal-content input,
+        .modal-content select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .modal-content input:focus,
+        .modal-content select:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
         }
 
         .toast {

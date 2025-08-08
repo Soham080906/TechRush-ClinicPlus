@@ -66,6 +66,41 @@ router.get('/my', auth, async (req, res) => {
   }
 });
 
+// Get booked slots for a specific doctor and date
+router.get('/booked-slots/:doctorId/:date', async (req, res) => {
+  try {
+    const { doctorId, date } = req.params;
+    
+    // Create start and end of the specified date
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    // Find all appointments for this doctor on this date
+    const bookedAppointments = await Appointment.find({
+      doctor: doctorId,
+      slot: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      },
+      status: { $ne: 'cancelled' } // Exclude cancelled appointments
+    });
+    
+    // Extract the time slots that are booked
+    const bookedSlots = bookedAppointments.map(appointment => {
+      const slotTime = new Date(appointment.slot);
+      return slotTime.toTimeString().slice(0, 5); // Format as HH:MM
+    });
+    
+    res.json({ bookedSlots });
+  } catch (error) {
+    console.error('Error fetching booked slots:', error);
+    res.status(500).json({ error: 'Failed to fetch booked slots' });
+  }
+});
+
 // Get appointments for a specific doctor (for doctor dashboard)
 router.get('/doctor/:doctorId', auth, async (req, res) => {
   try {
@@ -112,8 +147,69 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
+// Update appointment status (specific endpoint for status updates)
+router.put('/:id/status', auth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    
+    if (!['pending', 'confirmed', 'completed', 'cancelled'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const appointment = await Appointment.findById(req.params.id);
+    
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    // Check if user is the doctor for this appointment
+    if (appointment.doctor.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized to update this appointment status' });
+    }
+
+    appointment.status = status;
+    await appointment.save();
+
+    // Populate for response
+    await appointment.populate('patient', 'name email');
+    await appointment.populate('clinic', 'name location');
+
+    res.json({ 
+      message: 'Appointment status updated successfully',
+      appointment
+    });
+  } catch (error) {
+    console.error('Error updating appointment status:', error);
+    res.status(500).json({ error: 'Failed to update appointment status' });
+  }
+});
+
 // Cancel appointment
 router.delete('/:id', auth, async (req, res) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id);
+    
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    // Check if user owns the appointment or is the doctor
+    if (appointment.patient.toString() !== req.user.id && appointment.doctor.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized to cancel this appointment' });
+    }
+
+    appointment.status = 'cancelled';
+    await appointment.save();
+
+    res.json({ message: 'Appointment cancelled successfully' });
+  } catch (error) {
+    console.error('Error cancelling appointment:', error);
+    res.status(500).json({ error: 'Failed to cancel appointment' });
+  }
+});
+
+// Cancel appointment (PUT method for frontend compatibility)
+router.put('/:id/cancel', auth, async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
     
