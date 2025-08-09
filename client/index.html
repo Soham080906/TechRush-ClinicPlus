@@ -1,3 +1,4 @@
+<!-- Changes made by me  -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,11 +20,12 @@
             <ul class="nav-menu">
                 <li><a href="#home" class="nav-link">Home</a></li>
                 <li><a href="#services" class="nav-link">Services</a></li>
-                <li><a href="#doctors" class="nav-link">Doctors</a></li>
-                <li><a href="#clinics" class="nav-link">Clinics</a></li>
+                <li><a href="doctors.html" class="nav-link">Doctors</a></li>
+                <li><a href="clinics.html" class="nav-link">Clinics</a></li>
                 <li><a href="#contact" class="nav-link">Contact</a></li>
-                <li><a href="login.html" class="nav-link btn-login">Login</a></li>
-                <li><a href="register.html" class="nav-link btn-register">Register</a></li>
+                <li id="authSection">
+                    <!-- This will be populated by JavaScript -->
+                </li>
             </ul>
             <div class="hamburger">
                 <span class="bar"></span>
@@ -46,11 +48,18 @@
                     Book appointments, manage patients, and coordinate care seamlessly.
                 </p>
                 <div class="hero-buttons">
-                    <!-- Removed Book Appointment button -->
+                    <a href="#" class="btn btn-primary" id="bookAppointmentBtn">
+                        <i class="fas fa-calendar-check"></i>
+                        Book Appointment
+                    </a>
                     <a href="#services" class="btn btn-secondary">
                         <i class="fas fa-info-circle"></i>
                         Learn More
                     </a>
+                </div>
+                <!-- User Status Indicator -->
+                <div class="user-status" id="userStatus">
+                    <!-- This will be populated by JavaScript -->
                 </div>
             </div>
             <div class="hero-image">
@@ -162,8 +171,8 @@
                     <ul>
                         <li><a href="#home">Home</a></li>
                         <li><a href="#services">Services</a></li>
-                        <li><a href="#doctors">Doctors</a></li>
-                        <li><a href="#clinics">Clinics</a></li>
+                        <li><a href="doctors.html">Doctors</a></li>
+                        <li><a href="clinics.html">Clinics</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
@@ -189,5 +198,304 @@
     </footer>
 
     <script src="script.js"></script>
+    <script>
+        // Check if user is logged in and update UI accordingly
+        document.addEventListener('DOMContentLoaded', function() {
+            updateLoginStatus();
+            
+            const bookAppointmentBtn = document.getElementById('bookAppointmentBtn');
+            
+            // Add click event to book appointment button
+            bookAppointmentBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const token = localStorage.getItem('token');
+                if (token) {
+                    // User is logged in, redirect to appointments page
+                    window.location.href = 'appointments.html';
+                } else {
+                    // User is not logged in, redirect to login page
+                    showToast('Please login to book an appointment', 'info');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                }
+            });
+        });
+
+        // Update login status in navigation and hero section
+        function updateLoginStatus() {
+            const token = localStorage.getItem('token');
+            const userName = localStorage.getItem('userName');
+            const userRole = localStorage.getItem('userRole');
+            
+            const authSection = document.getElementById('authSection');
+            const userStatus = document.getElementById('userStatus');
+            const bookAppointmentBtn = document.getElementById('bookAppointmentBtn');
+            
+            if (token && userName) {
+                // User is logged in
+                authSection.innerHTML = `
+                    <div class="user-info">
+                        <span class="user-name">
+                            <i class="fas fa-user"></i>
+                            ${userName}
+                        </span>
+                        <div class="user-dropdown">
+                            <a href="dashboard.html" class="nav-link">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                            <a href="#" class="nav-link" id="logoutBtn">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                `;
+                
+                userStatus.innerHTML = `
+                    <div class="status-indicator logged-in">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Welcome back, ${userName}!</span>
+                        <small>You can book appointments and access your dashboard.</small>
+                    </div>
+                `;
+                
+                bookAppointmentBtn.innerHTML = `
+                    <i class="fas fa-calendar-check"></i>
+                    Book Appointment
+                `;
+                bookAppointmentBtn.classList.remove('btn-disabled');
+                
+                // Add logout functionality
+                document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    localStorage.clear();
+                    showToast('Logged out successfully', 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                });
+                
+            } else {
+                // User is not logged in
+                authSection.innerHTML = `
+                    <a href="login.html" class="nav-link btn-login">Login</a>
+                    <a href="register.html" class="nav-link btn-register">Register</a>
+                `;
+                
+                userStatus.innerHTML = `
+                    <div class="status-indicator logged-out">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Not logged in</span>
+                        <small>Please login to book appointments and access your dashboard.</small>
+                    </div>
+                `;
+                
+                bookAppointmentBtn.innerHTML = `
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login to Book Appointment
+                `;
+                bookAppointmentBtn.classList.add('btn-disabled');
+            }
+        }
+
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Add slideIn animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+
+    <style>
+        /* User Status Styles */
+        .user-status {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .status-indicator.logged-in {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-indicator.logged-out {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .status-indicator i {
+            font-size: 1.25rem;
+        }
+
+        .status-indicator span {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .status-indicator small {
+            display: block;
+            margin-top: 0.25rem;
+            opacity: 0.8;
+            font-weight: 400;
+        }
+
+        /* User Info in Navigation */
+        .user-info {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-name {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #2563eb;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: rgba(37, 99, 235, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .user-name:hover {
+            background: rgba(37, 99, 235, 0.2);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            padding: 0.5rem;
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .user-info:hover .user-dropdown {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .user-dropdown .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .user-dropdown .nav-link:hover {
+            background: #f3f4f6;
+            color: #2563eb;
+        }
+
+        /* Button States */
+        .btn-disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            background: #9ca3af !important;
+        }
+
+        .btn-disabled:hover {
+            background: #9ca3af !important;
+            transform: none !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .user-info {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .user-dropdown {
+                position: static;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                box-shadow: none;
+                background: transparent;
+                padding: 0;
+            }
+
+            .user-dropdown .nav-link {
+                padding: 0.5rem 0;
+                color: #64748b;
+            }
+
+            .status-indicator {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+
+            .status-indicator small {
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
 </body>
 </html> 

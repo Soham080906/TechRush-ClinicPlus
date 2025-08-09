@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Doctors - ClinicPlus</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-heartbeat"></i>
+                <span>ClinicPlus</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="appointments.html" class="nav-link">Book Appointment</a></li>
+                <li><a href="clinics.html" class="nav-link">Clinics</a></li>
+                <li><a href="login.html" class="nav-link btn-login" id="loginLink">Login</a></li>
+                <li><a href="register.html" class="nav-link btn-register" id="registerLink">Register</a></li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Doctors Section -->
+    <div class="doctors-page">
+        <div class="container">
+            <div class="doctors-header">
+                <h1>Our Expert Doctors</h1>
+                <p>Meet our team of specialized healthcare professionals</p>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-controls">
+                    <div class="filter-group">
+                        <label for="specializationFilter">Specialization</label>
+                        <select id="specializationFilter">
+                            <option value="">All Specializations</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="clinicFilter">Clinic</label>
+                        <select id="clinicFilter">
+                            <option value="">All Clinics</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="searchDoctor">Search</label>
+                        <input type="text" id="searchDoctor" placeholder="Search by name...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Doctors Grid -->
+            <div class="doctors-grid" id="doctorsGrid">
+                <!-- Doctors will be loaded here -->
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading doctors...</p>
+            </div>
+
+            <!-- No Results State -->
+            <div id="noResultsState" class="no-results-state" style="display: none;">
+                <i class="fas fa-search"></i>
+                <h3>No doctors found</h3>
+                <p>Try adjusting your search criteria</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        let allDoctors = [];
+        let allClinics = [];
+        let allSpecializations = [];
+
+        // Load doctors data
+        async function loadDoctors() {
+            try {
+                const [doctorsResponse, clinicsResponse, specializationsResponse] = await Promise.all([
+                    fetch('http://localhost:5000/api/doctors'),
+                    fetch('http://localhost:5000/api/clinics'),
+                    fetch('http://localhost:5000/api/specializations')
+                ]);
+
+                allDoctors = await doctorsResponse.json();
+                allClinics = await clinicsResponse.json();
+                
+                try {
+                    allSpecializations = await specializationsResponse.json();
+                } catch (error) {
+                    // Fallback to hardcoded specializations
+                    allSpecializations = [
+                        'Cardiologist', 'Pediatrician', 'Dermatologist', 'Orthopedic Surgeon',
+                        'Neurologist', 'Psychiatrist', 'General Physician', 'Dentist',
+                        'Ophthalmologist', 'Gynecologist'
+                    ];
+                }
+
+                populateFilters();
+                displayDoctors(allDoctors);
+                hideLoading();
+            } catch (error) {
+                console.error('Error loading doctors:', error);
+                // Load mock data for demonstration
+                loadMockData();
+            }
+        }
+
+        function loadMockData() {
+            allDoctors = [
+                {
+                    _id: '1',
+                    name: 'Dr. Sarah Johnson',
+                    specialization: 'Cardiologist',
+                    experience: 15,
+                    education: 'MD, Cardiology',
+                    clinic: { _id: '1', name: 'City General Hospital' },
+                    phone: '+1 (555) 123-4567'
+                },
+                {
+                    _id: '2',
+                    name: 'Dr. Michael Chen',
+                    specialization: 'Pediatrician',
+                    experience: 12,
+                    education: 'MD, Pediatrics',
+                    clinic: { _id: '1', name: 'City General Hospital' },
+                    phone: '+1 (555) 123-4568'
+                },
+                {
+                    _id: '3',
+                    name: 'Dr. Emily Davis',
+                    specialization: 'Dermatologist',
+                    experience: 8,
+                    education: 'MD, Dermatology',
+                    clinic: { _id: '2', name: 'Community Medical Center' },
+                    phone: '+1 (555) 123-4569'
+                },
+                {
+                    _id: '4',
+                    name: 'Dr. Robert Wilson',
+                    specialization: 'General Physician',
+                    experience: 20,
+                    education: 'MBBS, General Medicine',
+                    clinic: { _id: '3', name: 'Downtown Clinic' },
+                    phone: '+1 (555) 123-4570'
+                }
+            ];
+
+            allClinics = [
+                { _id: '1', name: 'City General Hospital' },
+                { _id: '2', name: 'Community Medical Center' },
+                { _id: '3', name: 'Downtown Clinic' }
+            ];
+
+            allSpecializations = [
+                'Cardiologist', 'Pediatrician', 'Dermatologist', 'Orthopedic Surgeon',
+                'Neurologist', 'Psychiatrist', 'General Physician', 'Dentist',
+                'Ophthalmologist', 'Gynecologist'
+            ];
+
+            populateFilters();
+            displayDoctors(allDoctors);
+            hideLoading();
+        }
+
+        function populateFilters() {
+            // Populate specialization filter
+            const specFilter = document.getElementById('specializationFilter');
+            specFilter.innerHTML = '<option value="">All Specializations</option>';
+            allSpecializations.forEach(spec => {
+                const option = document.createElement('option');
+                option.value = spec;
+                option.textContent = spec;
+                specFilter.appendChild(option);
+            });
+
+            // Populate clinic filter
+            const clinicFilter = document.getElementById('clinicFilter');
+            clinicFilter.innerHTML = '<option value="">All Clinics</option>';
+            allClinics.forEach(clinic => {
+                const option = document.createElement('option');
+                option.value = clinic._id;
+                option.textContent = clinic.name;
+                clinicFilter.appendChild(option);
+            });
+        }
+
+        function displayDoctors(doctors) {
+            const doctorsGrid = document.getElementById('doctorsGrid');
+            const noResultsState = document.getElementById('noResultsState');
+            
+            if (doctors.length === 0) {
+                doctorsGrid.innerHTML = '';
+                noResultsState.style.display = 'block';
+                return;
+            }
+
+            noResultsState.style.display = 'none';
+            doctorsGrid.innerHTML = '';
+
+            doctors.forEach(doctor => {
+                const doctorCard = document.createElement('div');
+                doctorCard.className = 'doctor-card';
+                doctorCard.innerHTML = `
+                    <div class="doctor-avatar">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <div class="doctor-info">
+                        <h3>${doctor.name}</h3>
+                        <p class="specialization">${doctor.specialization}</p>
+                        <p class="clinic">${doctor.clinic ? doctor.clinic.name : 'Clinic not assigned'}</p>
+                        ${doctor.experience ? `<p class="experience">${doctor.experience} years experience</p>` : ''}
+                        ${doctor.education ? `<p class="education">${doctor.education}</p>` : ''}
+                        ${doctor.phone ? `<p class="phone"><i class="fas fa-phone"></i> ${doctor.phone}</p>` : ''}
+                    </div>
+                    <div class="doctor-actions">
+                        <a href="appointments.html" class="btn btn-primary btn-sm">
+                            <i class="fas fa-calendar-plus"></i> Book Appointment
+                        </a>
+                    </div>
+                `;
+                doctorsGrid.appendChild(doctorCard);
+            });
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingState').style.display = 'none';
+        }
+
+        // Filter functionality
+        function filterDoctors() {
+            const specializationFilter = document.getElementById('specializationFilter').value;
+            const clinicFilter = document.getElementById('clinicFilter').value;
+            const searchTerm = document.getElementById('searchDoctor').value.toLowerCase();
+
+            let filteredDoctors = allDoctors.filter(doctor => {
+                const matchesSpecialization = !specializationFilter || doctor.specialization === specializationFilter;
+                const matchesClinic = !clinicFilter || (doctor.clinic && doctor.clinic._id === clinicFilter);
+                const matchesSearch = !searchTerm || doctor.name.toLowerCase().includes(searchTerm);
+
+                return matchesSpecialization && matchesClinic && matchesSearch;
+            });
+
+            displayDoctors(filteredDoctors);
+        }
+
+        // Add event listeners for filters
+        document.getElementById('specializationFilter').addEventListener('change', filterDoctors);
+        document.getElementById('clinicFilter').addEventListener('change', filterDoctors);
+        document.getElementById('searchDoctor').addEventListener('input', filterDoctors);
+
+        // Hide login/register links if logged in
+        window.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                const loginLink = document.getElementById('loginLink');
+                const registerLink = document.getElementById('registerLink');
+                if (loginLink) loginLink.style.display = 'none';
+                if (registerLink) registerLink.style.display = 'none';
+            }
+        });
+
+        // Initialize page
+        loadDoctors();
+    </script>
+
+    <style>
+        .doctors-page {
+            padding-top: 100px;
+            min-height: 100vh;
+            background: #f8fafc;
+        }
+
+        .doctors-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .doctors-header h1 {
+            font-size: 2.5rem;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+
+        .doctors-header p {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        .filter-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .filter-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .doctors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .doctor-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .doctor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .doctor-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .doctor-info h3 {
+            margin: 0 0 0.5rem 0;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .doctor-info p {
+            margin: 0.25rem 0;
+            color: #64748b;
+        }
+
+        .doctor-info .specialization {
+            color: #2563eb;
+            font-weight: 500;
+        }
+
+        .doctor-info .clinic {
+            font-weight: 500;
+        }
+
+        .doctor-info .experience {
+            color: #059669;
+        }
+
+        .doctor-info .education {
+            font-style: italic;
+        }
+
+        .doctor-info .phone {
+            color: #7c3aed;
+        }
+
+        .doctor-actions {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .loading-state,
+        .no-results-state {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        .loading-state i,
+        .no-results-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #2563eb;
+        }
+
+        .no-results-state h3 {
+            margin: 1rem 0 0.5rem 0;
+            color: #1e293b;
+        }
+
+        @media (max-width: 768px) {
+            .filter-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .doctors-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</body>
+</html>
