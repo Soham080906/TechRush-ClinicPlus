@@ -121,46 +121,36 @@
             allClinics = [
                 {
                     _id: '1',
-                    name: 'City General Hospital',
-                    location: '123 Main Street, Downtown',
-                    phone: '+1 (555) 123-4567',
-                    email: 'info@citygeneral.com',
-                    hours: 'Mon-Fri: 8AM-8PM, Sat: 9AM-5PM',
+                    name: 'Bharati Hospital',
+                   
+                    
                     services: ['Cardiology', 'Pediatrics', 'General Medicine', 'Emergency Care'],
-                    doctorCount: 15,
+                    doctorCount: 2,
                     specializations: ['Cardiologist', 'Pediatrician', 'General Physician']
                 },
                 {
                     _id: '2',
-                    name: 'Community Medical Center',
-                    location: '456 Oak Avenue, Midtown',
-                    phone: '+1 (555) 123-4568',
-                    email: 'contact@communitymed.com',
-                    hours: 'Mon-Fri: 7AM-9PM, Sat-Sun: 9AM-6PM',
+                    name: 'Sahyadri Super Speciality Hospital',
+                   
+                 
                     services: ['Dermatology', 'Orthopedics', 'Neurology', 'Physical Therapy'],
-                    doctorCount: 12,
+                    doctorCount: 2,
                     specializations: ['Dermatologist', 'Orthopedic Surgeon', 'Neurologist']
                 },
                 {
                     _id: '3',
-                    name: 'Downtown Clinic',
-                    location: '789 Business District, Downtown',
-                    phone: '+1 (555) 123-4569',
-                    email: 'hello@downtownclinic.com',
-                    hours: 'Mon-Fri: 9AM-6PM, Sat: 10AM-4PM',
+                    name: 'Medipoint Hospital',
+                   
                     services: ['General Medicine', 'Preventive Care', 'Vaccinations', 'Health Screenings'],
-                    doctorCount: 8,
+                    doctorCount: 2,
                     specializations: ['General Physician', 'Family Medicine']
                 },
                 {
                     _id: '4',
-                    name: 'Specialty Care Center',
-                    location: '321 Medical Plaza, Uptown',
-                    phone: '+1 (555) 123-4570',
-                    email: 'info@specialtycare.com',
-                    hours: 'Mon-Fri: 8AM-7PM, Sat: 9AM-5PM',
+                    name: 'Lifeline Hospital',
+                   
                     services: ['Cardiology', 'Dermatology', 'Endocrinology', 'Gastroenterology'],
-                    doctorCount: 20,
+                    doctorCount: 2,
                     specializations: ['Cardiologist', 'Dermatologist', 'Endocrinologist', 'Gastroenterologist']
                 }
             ];
@@ -195,19 +185,7 @@
                             <p class="location"><i class="fas fa-map-marker-alt"></i> ${clinic.location}</p>
                         </div>
                     </div>
-                    <div class="clinic-info">
-                        <div class="info-item">
-                            <i class="fas fa-phone"></i>
-                            <span>${clinic.phone}</span>
-                        </div>
-                        <div class="info-item">
-                            <i class="fas fa-envelope"></i>
-                            <span>${clinic.email}</span>
-                        </div>
-                        <div class="info-item">
-                            <i class="fas fa-clock"></i>
-                            <span>${clinic.hours}</span>
-                        </div>
+                    
                         <div class="info-item">
                             <i class="fas fa-user-md"></i>
                             <span>${clinic.doctorCount} doctors available</span>
