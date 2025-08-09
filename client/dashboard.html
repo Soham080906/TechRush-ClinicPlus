@@ -415,7 +415,7 @@
                 // Load doctor's patient appointments if user is a doctor
                 const userRole = localStorage.getItem('userRole');
                 if (userRole === 'doctor') {
-                    loadDoctorPatientAppointments();
+                    loadDoctorPatientAppointments('all');
                 }
 
             } catch (error) {
@@ -424,15 +424,16 @@
         }
 
         // Load doctor's patient appointments
-        async function loadDoctorPatientAppointments() {
+        async function loadDoctorPatientAppointments(statusFilter = 'all') {
             try {
                 const userId = localStorage.getItem('userId');
                 const token = localStorage.getItem('token');
                 
-                console.log('Loading doctor patient appointments for userId:', userId);
+                console.log('Loading doctor patient appointments for userId:', userId, 'with filter:', statusFilter);
                 
                 // Fetch appointments where the logged-in doctor is the assigned doctor
-                const response = await fetch(`http://localhost:5000/api/appointments/doctor/${userId}`, {
+                const url = `http://localhost:5000/api/appointments/doctor/${userId}${statusFilter !== 'all' ? `?status=${statusFilter}` : ''}`;
+                const response = await fetch(url, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -442,10 +443,14 @@
                 
                 if (response.ok) {
                     const appointments = await response.json();
-                    console.log('Doctor appointments loaded:', appointments);
+                    console.log('Doctor appointments loaded:', appointments.length, 'appointments');
+                    console.log('Appointments data:', appointments);
                     displayDoctorPatientAppointments(appointments);
                 } else {
-                    console.log('Failed to fetch doctor appointments, using mock data');
+                    const errorText = await response.text();
+                    console.error('Failed to fetch doctor appointments:', response.status, errorText);
+                    // Show user-friendly message
+                    showToast('Unable to load patient appointments. Please refresh the page.', 'error');
                     // Fallback to mock data for demonstration
                     const mockAppointments = generateMockDoctorAppointments();
                     displayDoctorPatientAppointments(mockAppointments);
@@ -498,30 +503,10 @@
                 return;
             }
             
-            // Store appointments globally for filtering
-            window.allDoctorAppointments = appointments;
-            
-            // Apply filter
-            applyAppointmentFilter();
-        }
-
-        // Apply appointment filter
-        function applyAppointmentFilter() {
-            const filterValue = document.getElementById('appointmentFilter').value;
-            const doctorAppointmentsList = document.getElementById('doctorAppointmentsList');
-            const appointments = window.allDoctorAppointments || [];
-            
-            // Filter appointments based on selection
-            let filteredAppointments = appointments;
-            if (filterValue === 'active') {
-                filteredAppointments = appointments.filter(appointment => appointment.status !== 'cancelled');
-            } else if (filterValue === 'cancelled') {
-                filteredAppointments = appointments.filter(appointment => appointment.status === 'cancelled');
-            }
-            
             doctorAppointmentsList.innerHTML = '';
             
-            if (filteredAppointments.length === 0) {
+            if (appointments.length === 0) {
+                const filterValue = document.getElementById('appointmentFilter').value;
                 const filterText = filterValue === 'all' ? 'No patient appointments found.' : 
                                  filterValue === 'active' ? 'No active appointments found.' : 
                                  'No cancelled appointments found.';
@@ -529,7 +514,7 @@
                 return;
             }
             
-            filteredAppointments.forEach(appointment => {
+            appointments.forEach(appointment => {
                 const appointmentCard = document.createElement('div');
                 appointmentCard.className = `appointment-card doctor-appointment-card ${appointment.status === 'cancelled' ? 'cancelled-appointment' : ''}`;
                 
@@ -552,8 +537,17 @@
                 appointmentCard.innerHTML = `
                     <div class="appointment-header">
                         <div class="patient-info">
-                            <h3>${appointment.patient ? appointment.patient.name : 'Patient'}</h3>
-                            <p class="patient-email">${appointment.patient ? appointment.patient.email : 'No email'}</p>
+                            <div class="patient-main">
+                                <h3>${appointment.patient ? appointment.patient.name : 'Patient'}</h3>
+                                <p class="patient-email">
+                                    <i class="fas fa-envelope"></i>
+                                    ${appointment.patient ? appointment.patient.email : 'No email'}
+                                </p>
+                            </div>
+                            <div class="patient-id">
+                                <span class="id-label">ID:</span>
+                                <span class="id-value">${appointment.patient ? appointment.patient._id : 'N/A'}</span>
+                            </div>
                         </div>
                         <div class="status-badge ${appointment.status}">
                             <i class="${statusConfig.icon}"></i>
@@ -591,15 +585,15 @@
                         <button class="btn btn-success btn-sm update-status" data-appointment-id="${appointment._id}" data-current-status="${appointment.status}">
                             <i class="fas fa-check"></i> ${statusConfig.nextAction}
                         </button>
-                        <button class="btn btn-info btn-sm view-patient" data-appointment-id="${appointment._id}">
-                            <i class="fas fa-eye"></i> View Details
+                        <button class="btn btn-info btn-sm view-patient" data-appointment-id="${appointment._id}" data-patient-name="${appointment.patient ? appointment.patient.name : 'Patient'}" data-patient-email="${appointment.patient ? appointment.patient.email : 'No email'}" data-patient-id="${appointment.patient ? appointment.patient._id : 'N/A'}">
+                            <i class="fas fa-eye"></i> View Patient
                         </button>
                         <button class="btn btn-warning btn-sm reschedule-appointment" data-appointment-id="${appointment._id}">
                             <i class="fas fa-calendar-plus"></i> Reschedule
                         </button>
                         ` : `
-                        <button class="btn btn-info btn-sm view-patient" data-appointment-id="${appointment._id}">
-                            <i class="fas fa-eye"></i> View Details
+                        <button class="btn btn-info btn-sm view-patient" data-appointment-id="${appointment._id}" data-patient-name="${appointment.patient ? appointment.patient.name : 'Patient'}" data-patient-email="${appointment.patient ? appointment.patient.email : 'No email'}" data-patient-id="${appointment.patient ? appointment.patient._id : 'N/A'}">
+                            <i class="fas fa-eye"></i> View Patient
                         </button>
                         <span class="cancelled-note">Appointment cancelled by patient</span>
                         `}
@@ -620,6 +614,14 @@
             document.querySelectorAll('.reschedule-appointment').forEach(button => {
                 button.addEventListener('click', rescheduleAppointment);
             });
+        }
+
+        // Apply appointment filter
+        function applyAppointmentFilter() {
+            const filterValue = document.getElementById('appointmentFilter').value;
+            
+            // Reload appointments with the selected filter
+            loadDoctorPatientAppointments(filterValue);
         }
 
         // Get status configuration for display
@@ -721,9 +723,15 @@
                             <p><i class="fas fa-hospital"></i> ${appointment.clinic ? appointment.clinic.name : 'Clinic'}</p>
                         </div>
                         <div class="appointment-actions">
-                            <button class="btn btn-danger btn-sm cancel-appointment" data-appointment-id="${appointment._id}">
-                                <i class="fas fa-times"></i> Cancel
-                            </button>
+                            ${appointment.status === 'cancelled' ? `
+                                <span class="cancelled-status">
+                                    <i class="fas fa-times-circle"></i> Cancelled
+                                </span>
+                            ` : `
+                                <button class="btn btn-danger btn-sm cancel-appointment" data-appointment-id="${appointment._id}">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            `}
                         </div>
                     `;
                     appointmentsList.appendChild(appointmentCard);
@@ -923,7 +931,7 @@
         async function cancelAppointment(event) {
             const appointmentId = event.target.closest('.cancel-appointment').dataset.appointmentId;
             
-            if (!confirm('Are you sure you want to cancel this appointment?')) {
+            if (!confirm('Are you sure you want to cancel this appointment? This will make the time slot available for other patients.')) {
                 return;
             }
             
@@ -939,6 +947,10 @@
                     showToast('Appointment cancelled successfully! The time slot is now available for other patients.', 'success');
                     // Refresh appointments list
                     loadDashboardData();
+                    
+                    // If the appointments page is open in another tab, it will refresh slots on next interaction
+                    // Store a flag to indicate slots should be refreshed
+                    localStorage.setItem('slotsNeedRefresh', 'true');
                 } else {
                     const error = await response.text();
                     showToast(`Cancellation failed: ${error}`, 'error');
@@ -983,55 +995,104 @@
 
         // View patient details (for doctors)
         function viewPatientDetails(event) {
-            const appointmentId = event.target.closest('.view-patient').dataset.appointmentId;
+            const button = event.target.closest('.view-patient');
+            const appointmentId = button.dataset.appointmentId;
+            const patientName = button.dataset.patientName;
+            const patientEmail = button.dataset.patientEmail;
+            const patientId = button.dataset.patientId;
             
-            // Find the appointment data
+            // Find the appointment data from the card
             const appointmentCard = event.target.closest('.appointment-card');
-            const patientName = appointmentCard.querySelector('.patient-info h3').textContent;
-            const patientEmail = appointmentCard.querySelector('.patient-email').textContent;
             const appointmentDate = appointmentCard.querySelector('.detail-row span').textContent;
             const appointmentTime = appointmentCard.querySelectorAll('.detail-row span')[1].textContent;
             const clinicName = appointmentCard.querySelectorAll('.detail-row span')[2].textContent;
+            const notesElement = appointmentCard.querySelector('.detail-row:has(.fa-sticky-note) span');
+            const notes = notesElement ? notesElement.textContent : 'No notes';
+            const statusBadge = appointmentCard.querySelector('.status-badge span').textContent;
             
-            // Create a modal to show patient details
+            // Create a modal to show comprehensive patient details
             const modal = document.createElement('div');
-            modal.className = 'modal';
+            modal.className = 'modal patient-details-modal';
             modal.innerHTML = `
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3>Patient Details</h3>
+                        <h3><i class="fas fa-user-injured"></i> Patient Information</h3>
                         <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
                     </div>
                     <div class="modal-body">
-                        <div class="patient-detail-item">
-                            <label>Patient Name:</label>
-                            <span>${patientName}</span>
+                        <div class="patient-overview">
+                            <div class="patient-avatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="patient-summary">
+                                <h4>${patientName}</h4>
+                                <p class="patient-id">Patient ID: ${patientId}</p>
+                                <p class="patient-status">Status: Active Patient</p>
+                            </div>
                         </div>
-                        <div class="patient-detail-item">
-                            <label>Email:</label>
-                            <span>${patientEmail}</span>
-                        </div>
-                        <div class="patient-detail-item">
-                            <label>Appointment Date:</label>
-                            <span>${appointmentDate}</span>
-                        </div>
-                        <div class="patient-detail-item">
-                            <label>Appointment Time:</label>
-                            <span>${appointmentTime}</span>
-                        </div>
-                        <div class="patient-detail-item">
-                            <label>Clinic:</label>
-                            <span>${clinicName}</span>
-                        </div>
-                        <div class="patient-detail-item">
-                            <label>Appointment ID:</label>
-                            <span>${appointmentId}</span>
+                        
+                        <div class="details-grid">
+                            <div class="detail-section">
+                                <h5><i class="fas fa-address-book"></i> Contact Information</h5>
+                                <div class="patient-detail-item">
+                                    <label>Email Address:</label>
+                                    <span>${patientEmail}</span>
+                                </div>
+                                <div class="patient-detail-item">
+                                    <label>Phone Number:</label>
+                                    <span>Not available</span>
+                                </div>
+                            </div>
+                            
+                            <div class="detail-section">
+                                <h5><i class="fas fa-calendar-alt"></i> Appointment Details</h5>
+                                <div class="patient-detail-item">
+                                    <label>Date:</label>
+                                    <span>${appointmentDate}</span>
+                                </div>
+                                <div class="patient-detail-item">
+                                    <label>Time:</label>
+                                    <span>${appointmentTime}</span>
+                                </div>
+                                <div class="patient-detail-item">
+                                    <label>Status:</label>
+                                    <span class="status-text">${statusBadge}</span>
+                                </div>
+                                <div class="patient-detail-item">
+                                    <label>Clinic:</label>
+                                    <span>${clinicName}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="detail-section full-width">
+                                <h5><i class="fas fa-sticky-note"></i> Appointment Notes</h5>
+                                <div class="notes-content">
+                                    ${notes || 'No additional notes provided by the patient.'}
+                                </div>
+                            </div>
+                            
+                            <div class="detail-section full-width">
+                                <h5><i class="fas fa-info-circle"></i> System Information</h5>
+                                <div class="patient-detail-item">
+                                    <label>Appointment ID:</label>
+                                    <span>${appointmentId}</span>
+                                </div>
+                                <div class="patient-detail-item">
+                                    <label>Booking Date:</label>
+                                    <span>System records available</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-actions">
-                        <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
+                        <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">
+                            <i class="fas fa-times"></i> Close
+                        </button>
                         <button class="btn btn-primary" onclick="sendReminder('${patientEmail}', '${appointmentDate}', '${appointmentTime}')">
                             <i class="fas fa-envelope"></i> Send Reminder
+                        </button>
+                        <button class="btn btn-success" onclick="downloadPatientReport('${patientName}', '${appointmentId}')">
+                            <i class="fas fa-download"></i> Download Report
                         </button>
                     </div>
                 </div>
@@ -1050,8 +1111,19 @@
 
         // Send reminder function
         function sendReminder(email, date, time) {
-            showToast(`Reminder sent to ${email} for appointment on ${date} at ${time}`, 'success');
+            showToast(`Appointment reminder sent to ${email} for ${date} at ${time}`, 'success');
             // In a real application, this would send an actual email
+            // Close modal after sending reminder
+            document.querySelector('.patient-details-modal').remove();
+        }
+
+        // Download patient report function
+        function downloadPatientReport(patientName, appointmentId) {
+            showToast(`Generating report for ${patientName} - Appointment ID: ${appointmentId}`, 'info');
+            // In a real application, this would generate and download a PDF report
+            setTimeout(() => {
+                showToast('Patient report generated successfully!', 'success');
+            }, 2000);
         }
 
         // Initialize dashboard
@@ -1335,6 +1407,22 @@
             background: #d97706;
         }
 
+        .cancelled-status {
+            color: #dc2626;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #fee2e2;
+            border-radius: 6px;
+            border: 1px solid #fecaca;
+        }
+
+        .cancelled-status i {
+            font-size: 1.1rem;
+        }
+
         .patient-detail-item {
             display: flex;
             justify-content: space-between;
@@ -1357,6 +1445,143 @@
 
         .modal-body {
             padding: 2rem;
+        }
+
+        /* Enhanced Patient Details Modal Styles */
+        .patient-details-modal .modal-content {
+            max-width: 800px;
+            width: 95%;
+        }
+
+        .patient-overview {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            border-left: 4px solid #2563eb;
+        }
+
+        .patient-avatar {
+            font-size: 3rem;
+            color: #2563eb;
+        }
+
+        .patient-summary h4 {
+            margin: 0 0 0.5rem 0;
+            color: #1e293b;
+            font-size: 1.5rem;
+        }
+
+        .patient-id, .patient-status {
+            margin: 0.25rem 0;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .patient-status {
+            color: #059669;
+            font-weight: 500;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .detail-section {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .detail-section.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .detail-section h5 {
+            margin: 0 0 1rem 0;
+            color: #374151;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .detail-section h5 i {
+            color: #2563eb;
+        }
+
+        .notes-content {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 3px solid #2563eb;
+            font-style: italic;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .status-text {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .patient-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .patient-main {
+            flex: 1;
+        }
+
+        .patient-id {
+            background: #f1f5f9;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+
+        .id-label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .id-value {
+            font-family: monospace;
+            color: #1e293b;
+        }
+
+        @media (max-width: 768px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .patient-overview {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .patient-info {
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
 
         /* Modal Styles */

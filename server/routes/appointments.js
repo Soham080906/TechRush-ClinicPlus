@@ -13,6 +13,16 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ error: 'Doctor, clinic, and slot are required' });
     }
 
+    // Validate that appointment is not for today or in the past
+    const appointmentDate = new Date(slot);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    appointmentDate.setHours(0, 0, 0, 0);
+    
+    if (appointmentDate <= today) {
+      return res.status(400).json({ error: 'Appointments cannot be booked for today or past dates' });
+    }
+
     // Check if slot is already booked
     const existingAppointment = await Appointment.findOne({ 
       doctor, 
@@ -71,6 +81,8 @@ router.get('/booked-slots/:doctorId/:date', async (req, res) => {
   try {
     const { doctorId, date } = req.params;
     
+    console.log('Fetching booked slots for doctorId:', doctorId, 'date:', date);
+    
     // Validate date format
     const inputDate = new Date(date);
     if (isNaN(inputDate.getTime())) {
@@ -84,7 +96,7 @@ router.get('/booked-slots/:doctorId/:date', async (req, res) => {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
     
-    // Find all appointments for this doctor on this date
+    // Find all appointments for this doctor on this date (excluding cancelled)
     const bookedAppointments = await Appointment.find({
       doctor: doctorId,
       slot: {
@@ -93,6 +105,8 @@ router.get('/booked-slots/:doctorId/:date', async (req, res) => {
       },
       status: { $ne: 'cancelled' } // Exclude cancelled appointments
     });
+    
+    console.log('Found appointments (excluding cancelled):', bookedAppointments.length);
     
     // Extract the time slots that are booked
     const bookedSlots = bookedAppointments.map(appointment => {
@@ -105,6 +119,8 @@ router.get('/booked-slots/:doctorId/:date', async (req, res) => {
       return slotTime.toTimeString().slice(0, 5); // Format as HH:MM
     }).filter(slot => slot !== null); // Remove invalid slots
     
+    console.log('Booked slots returned:', bookedSlots);
+    
     res.json({ bookedSlots });
   } catch (error) {
     console.error('Error fetching booked slots:', error);
@@ -115,12 +131,43 @@ router.get('/booked-slots/:doctorId/:date', async (req, res) => {
 // Get appointments for a specific doctor (for doctor dashboard)
 router.get('/doctor/:doctorId', auth, async (req, res) => {
   try {
-    const appointments = await Appointment.find({ 
-      doctor: req.params.doctorId 
-    })
-    .populate('patient', 'name email')
-    .populate('clinic', 'name location')
-    .sort({ slot: 1 });
+    const { doctorId } = req.params;
+    const { status } = req.query; // Optional status filter
+    
+    console.log('Fetching appointments for doctorId:', doctorId, 'with status filter:', status);
+    
+    // First, try to find doctor by User ID, then by Doctor ID
+    let actualDoctorId = doctorId;
+    
+    // Check if the doctorId is a User ID and find the corresponding Doctor
+    const Doctor = require('../models/Doctor');
+    const doctorRecord = await Doctor.findOne({ user: doctorId });
+    if (doctorRecord) {
+      actualDoctorId = doctorRecord._id;
+      console.log('Found doctor record:', actualDoctorId, 'for user:', doctorId);
+    } else {
+      console.log('No doctor record found for user ID, trying as direct doctor ID:', doctorId);
+    }
+
+    // Build query with the correct doctor ID
+    let query = { doctor: actualDoctorId };
+    if (status && status !== 'all') {
+      if (status === 'active') {
+        query.status = { $ne: 'cancelled' };
+      } else {
+        query.status = status;
+      }
+    }
+
+    console.log('Final query:', query);
+
+    const appointments = await Appointment.find(query)
+      .populate('patient', 'name email')
+      .populate('clinic', 'name location')
+      .populate('doctor', 'name specialization')
+      .sort({ slot: 1 });
+
+    console.log('Found appointments:', appointments.length);
 
     // Add appointment type for better categorization
     const appointmentsWithType = appointments.map(appointment => {

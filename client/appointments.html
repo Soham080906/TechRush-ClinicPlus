@@ -75,7 +75,12 @@
                         
                         <!-- Available Time Slots -->
                         <div class="time-slots-section">
-                            <h3>Available Time Slots</h3>
+                            <div class="slots-header">
+                                <h3>Available Time Slots</h3>
+                                <button type="button" class="btn btn-secondary btn-sm" id="refreshSlotsBtn" onclick="refreshTimeSlots()">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
                             <div class="time-slots-grid" id="timeSlotsGrid">
                                 <!-- Time slots will be populated here -->
                             </div>
@@ -130,7 +135,7 @@
         let selectedDoctor = '';
         let availableSlots = [];
 
-        // Set minimum date to today
+        // Set minimum date to tomorrow (cannot book for today)
         function setMinDate() {
             const today = new Date();
             const tomorrow = new Date(today);
@@ -145,6 +150,22 @@
             dateInput.min = minDate;
             dateInput.value = minDate;
             selectedDate = minDate;
+            
+            // Add event listener to prevent manual entry of today's date
+            dateInput.addEventListener('change', function() {
+                const selectedDateValue = new Date(this.value);
+                const todayDate = new Date();
+                todayDate.setHours(0, 0, 0, 0);
+                selectedDateValue.setHours(0, 0, 0, 0);
+                
+                if (selectedDateValue <= todayDate) {
+                    window.showToast('Appointments cannot be booked for today or past dates. Please select a future date.', 'error');
+                    this.value = minDate;
+                    selectedDate = minDate;
+                    return;
+                }
+                selectedDate = this.value;
+            });
         }
 
         // Load clinics and doctors
@@ -403,6 +424,17 @@
                 return;
             }
 
+            // Additional validation: Check if date is not today or in the past
+            const selectedDateValue = new Date(date);
+            const todayDate = new Date();
+            todayDate.setHours(0, 0, 0, 0);
+            selectedDateValue.setHours(0, 0, 0, 0);
+            
+            if (selectedDateValue <= todayDate) {
+                window.showToast('Appointments cannot be booked for today or past dates. Please select a future date.', 'error');
+                return;
+            }
+
             const slot = new Date(`${date}T${time}`);
 
             // Check if user is logged in
@@ -435,13 +467,18 @@
                     
                     // Clear the selected time slot
                     document.getElementById('time').value = '';
+                    document.querySelectorAll('.time-slot.selected').forEach(slot => {
+                        slot.classList.remove('selected');
+                    });
                     
                     // Clear the notes
                     document.getElementById('notes').value = '';
                     
                     // Refresh time slots to show the newly booked slot as unavailable
                     if (selectedDoctor && selectedDate) {
-                        loadAvailableSlots();
+                        setTimeout(() => {
+                            loadAvailableSlots();
+                        }, 500); // Small delay to ensure backend is updated
                     }
                 } else {
                     const error = await response.text();
@@ -465,13 +502,59 @@
             }
         });
 
+        // Check if slots need refresh (due to cancellation from another page)
+        function checkSlotsRefresh() {
+            if (localStorage.getItem('slotsNeedRefresh') === 'true') {
+                localStorage.removeItem('slotsNeedRefresh');
+                if (selectedDoctor && selectedDate) {
+                    console.log('Refreshing slots due to appointment cancellation');
+                    loadAvailableSlots();
+                    window.showToast('Time slots updated - cancelled appointments are now available!', 'info');
+                }
+            }
+        }
+
+        // Force refresh slots when page becomes visible
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                checkSlotsRefresh();
+            }
+        });
+
         // Initialize page
         setMinDate();
         loadBookingData();
+        checkSlotsRefresh();
         
         // Show initial message for time slots
         const timeSlotsGrid = document.getElementById('timeSlotsGrid');
         timeSlotsGrid.innerHTML = '<div class="no-slots-message">Please select a date and doctor to view available time slots</div>';
+
+        // Check for slot refresh periodically (in case of cancellations from other tabs)
+        setInterval(checkSlotsRefresh, 5000); // Check every 5 seconds
+
+        // Manual refresh function
+        function refreshTimeSlots() {
+            if (selectedDoctor && selectedDate) {
+                console.log('Manual refresh of time slots');
+                const refreshBtn = document.getElementById('refreshSlotsBtn');
+                const originalHTML = refreshBtn.innerHTML;
+                refreshBtn.innerHTML = '<i class="fas fa-spin fa-spinner"></i> Refreshing...';
+                refreshBtn.disabled = true;
+                
+                loadAvailableSlots().then(() => {
+                    refreshBtn.innerHTML = originalHTML;
+                    refreshBtn.disabled = false;
+                    window.showToast('Time slots refreshed successfully!', 'success');
+                }).catch(() => {
+                    refreshBtn.innerHTML = originalHTML;
+                    refreshBtn.disabled = false;
+                    window.showToast('Failed to refresh time slots', 'error');
+                });
+            } else {
+                window.showToast('Please select a doctor and date first', 'info');
+            }
+        }
     </script>
 
     <style>
@@ -597,6 +680,17 @@
             color: #1e293b;
             font-weight: 600;
             font-size: 1.1rem;
+        }
+
+        .slots-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .slots-header h3 {
+            margin: 0;
         }
 
         .time-slots-grid {
