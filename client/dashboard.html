@@ -395,7 +395,10 @@
                     }
                 });
                 const appointments = await appointmentsResponse.json();
-                document.getElementById('appointmentCount').textContent = appointments.length;
+                
+                // Filter out cancelled appointments for display
+                const activeAppointments = appointments.filter(apt => apt.status !== 'cancelled');
+                document.getElementById('appointmentCount').textContent = activeAppointments.length;
 
                 // Load doctors
                 const doctorsResponse = await fetch('http://localhost:5000/api/doctors');
@@ -409,8 +412,8 @@
                 document.getElementById('clinicCount').textContent = clinics.length;
                 populateClinicsGrid(clinics);
 
-                // Load appointments list
-                loadAppointmentsList(appointments);
+                // Load appointments list (only active appointments)
+                loadAppointmentsList(activeAppointments);
 
                 // Load doctor's patient appointments if user is a doctor
                 const userRole = localStorage.getItem('userRole');

@@ -63,7 +63,8 @@ router.post('/', auth, async (req, res) => {
 router.get('/my', auth, async (req, res) => {
   try {
     const appointments = await Appointment.find({ 
-      patient: req.user.id 
+      patient: req.user.id,
+      status: { $ne: 'cancelled' } // Exclude cancelled appointments
     })
     .populate('doctor', 'name specialization')
     .populate('clinic', 'name location')
