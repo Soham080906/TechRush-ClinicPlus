@@ -1,3 +1,4 @@
+<!-- Changes made by me  -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,11 +20,11 @@
             <ul class="nav-menu">
                 <li><a href="#home" class="nav-link">Home</a></li>
                 <li><a href="#services" class="nav-link">Services</a></li>
-                <li><a href="#doctors" class="nav-link">Doctors</a></li>
-                <li><a href="#clinics" class="nav-link">Clinics</a></li>
-                <li><a href="#contact" class="nav-link">Contact</a></li>
-                <li><a href="login.html" class="nav-link btn-login">Login</a></li>
-                <li><a href="register.html" class="nav-link btn-register">Register</a></li>
+                <li><a href="doctors.html" class="nav-link">Doctors</a></li>
+                <li><a href="clinics.html" class="nav-link">Clinics</a></li>
+                <li id="authSection">
+                    <!-- This will be populated by JavaScript -->
+                </li>
             </ul>
             <div class="hamburger">
                 <span class="bar"></span>
@@ -46,11 +47,14 @@
                     Book appointments, manage patients, and coordinate care seamlessly.
                 </p>
                 <div class="hero-buttons">
-                    <!-- Removed Book Appointment button -->
-                    <a href="#services" class="btn btn-secondary">
-                        <i class="fas fa-info-circle"></i>
-                        Learn More
+                    <a href="#" class="btn btn-primary" id="bookAppointmentBtn">
+                        <i class="fas fa-calendar-check"></i>
+                        Book Appointment
                     </a>
+                </div>
+                <!-- User Status Indicator -->
+                <div class="user-status" id="userStatus">
+                <!-- This will be populated by JavaScript -->
                 </div>
             </div>
             <div class="hero-image">
@@ -124,15 +128,15 @@
         <div class="container">
             <div class="stats-grid">
                 <div class="stat-item">
-                    <div class="stat-number">500+</div>
+                    <div class="stat-number">5+</div>
                     <div class="stat-label">Happy Patients</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">50+</div>
+                    <div class="stat-number">10+</div>
                     <div class="stat-label">Expert Doctors</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">10+</div>
+                    <div class="stat-number">4+</div>
                     <div class="stat-label">Modern Clinics</div>
                 </div>
                 <div class="stat-item">
@@ -151,10 +155,7 @@
                     <h3>ClinicPlus</h3>
                     <p>Modern healthcare management system for clinics and patients.</p>
                     <div class="social-links">
-                        <a href="#"><i class="fab fa-facebook"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-linkedin"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
+                       
                     </div>
                 </div>
                 <div class="footer-section">
@@ -162,8 +163,8 @@
                     <ul>
                         <li><a href="#home">Home</a></li>
                         <li><a href="#services">Services</a></li>
-                        <li><a href="#doctors">Doctors</a></li>
-                        <li><a href="#clinics">Clinics</a></li>
+                        <li><a href="doctors.html">Doctors</a></li>
+                        <li><a href="clinics.html">Clinics</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
@@ -177,17 +178,156 @@
                 </div>
                 <div class="footer-section">
                     <h4>Contact</h4>
-                    <p><i class="fas fa-phone"></i> +1 (555) 123-4567</p>
+                    <p><i class="fas fa-phone"></i> +91 8686658586</p>
                     <p><i class="fas fa-envelope"></i> info@clinicplus.com</p>
-                    <p><i class="fas fa-map-marker-alt"></i> 123 Healthcare Ave, Medical City</p>
                 </div>
             </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 ClinicPlus. All rights reserved.</p>
-            </div>
+            
         </div>
     </footer>
 
     <script src="script.js"></script>
+    <script>
+        // Check if user is logged in and update UI accordingly
+        document.addEventListener('DOMContentLoaded', function() {
+            updateLoginStatus();
+            
+            const bookAppointmentBtn = document.getElementById('bookAppointmentBtn');
+            
+            // Add click event to book appointment button
+            bookAppointmentBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const token = localStorage.getItem('token');
+                if (token) {
+                    // User is logged in, redirect to appointments page
+                    window.location.href = 'appointments.html';
+                } else {
+                    // User is not logged in, redirect to login page
+                    showToast('Please login to book an appointment', 'info');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                }
+            });
+        });
+
+        // Update login status in navigation and hero section
+        function updateLoginStatus() {
+            const token = localStorage.getItem('token');
+            const userName = localStorage.getItem('userName');
+            const userRole = localStorage.getItem('userRole');
+            
+            const authSection = document.getElementById('authSection');
+            const userStatus = document.getElementById('userStatus');
+            const bookAppointmentBtn = document.getElementById('bookAppointmentBtn');
+            
+            if (token && userName) {
+                // User is logged in
+                authSection.innerHTML = `
+                    <div class="user-info">
+                        <span class="user-name">
+                            <i class="fas fa-user"></i>
+                            ${userName}
+                        </span>
+                        <div class="user-dropdown">
+                            <a href="dashboard.html" class="nav-link">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                            <a href="#" class="nav-link" id="logoutBtn">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                `;
+                
+                userStatus.innerHTML = `
+                    <div class="status-indicator logged-in">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Welcome back, ${userName}!</span>
+                        <small>You can book appointments and access your dashboard.</small>
+                    </div>
+                `;
+                
+                bookAppointmentBtn.innerHTML = `
+                    <i class="fas fa-calendar-check"></i>
+                    Book Appointment
+                `;
+                bookAppointmentBtn.classList.remove('btn-disabled');
+                
+                // Add logout functionality
+                document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    localStorage.clear();
+                    showToast('Logged out successfully', 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                });
+                
+            } else {
+                // User is not logged in
+                authSection.innerHTML = `
+                    <a href="login.html" class="nav-link btn-login">Login</a>
+                    <a href="register.html" class="nav-link btn-register">Register</a>
+                `;
+                
+                userStatus.innerHTML = `
+                    <div class="status-indicator logged-out">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Not logged in</span>
+                        <small>Please login to book appointments and access your dashboard.</small>
+                    </div>
+                `;
+                
+                bookAppointmentBtn.innerHTML = `
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login to Book Appointment
+                `;
+                bookAppointmentBtn.classList.add('btn-disabled');
+            }
+        }
+
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Add slideIn animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
 </html> 

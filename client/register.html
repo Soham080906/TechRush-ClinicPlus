@@ -35,6 +35,9 @@
                 <div class="form-group">
                     <label for="confirmPassword">Confirm Password</label>
                     <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    <div class="forgot-password-link">
+                        <a href="forgot-password.html">Forgot Password?</a>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -128,6 +131,39 @@
             }
         }
 
+        // Load specializations dynamically
+        async function loadSpecializations() {
+            try {
+                const response = await fetch('http://localhost:5000/api/specializations');
+                const specializations = await response.json();
+                const specializationSelect = document.getElementById('specialization');
+                
+                specializationSelect.innerHTML = '<option value="">Select specialization</option>';
+                specializations.forEach(spec => {
+                    const option = document.createElement('option');
+                    option.value = spec;
+                    option.textContent = spec;
+                    specializationSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading specializations:', error);
+                // Fallback to hardcoded list if API fails
+                const fallbackSpecializations = [
+                    'Cardiologist', 'Pediatrician', 'Dermatologist', 'Orthopedic Surgeon',
+                    'Neurologist', 'Psychiatrist', 'General Physician', 'Dentist',
+                    'Ophthalmologist', 'Gynecologist'
+                ];
+                const specializationSelect = document.getElementById('specialization');
+                specializationSelect.innerHTML = '<option value="">Select specialization</option>';
+                fallbackSpecializations.forEach(spec => {
+                    const option = document.createElement('option');
+                    option.value = spec;
+                    option.textContent = spec;
+                    specializationSelect.appendChild(option);
+                });
+            }
+        }
+
         // Show/hide doctor fields based on role selection
         document.getElementById('role').addEventListener('change', function() {
             const doctorFields = document.getElementById('doctorFields');
@@ -135,6 +171,8 @@
             
             if (isDoctor) {
                 doctorFields.style.display = 'block';
+                // Load specializations when doctor role is selected
+                loadSpecializations();
                 // Make doctor fields required
                 const doctorInputs = doctorFields.querySelectorAll('input, select');
                 doctorInputs.forEach(input => {
@@ -194,10 +232,54 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    showToast('Registration successful! Please login.', 'success');
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 2000);
+                    showToast('Registration successful! Auto-login in progress...', 'success');
+                    
+                    // Auto-login after successful registration
+                    try {
+                        const loginResponse = await fetch('http://localhost:5000/api/auth/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                email: formData.get('email'),
+                                password: password,
+                                role: role
+                            })
+                        });
+                        
+                        const loginResult = await loginResponse.json();
+                        
+                        if (loginResponse.ok) {
+                            // Store user information
+                            localStorage.setItem('token', loginResult.token);
+                            localStorage.setItem('userRole', loginResult.user.role);
+                            localStorage.setItem('userId', loginResult.user.id);
+                            localStorage.setItem('userName', loginResult.user.name);
+                            localStorage.setItem('userEmail', loginResult.user.email);
+                            
+                            // Store doctor profile if available
+                            if (loginResult.doctorProfile) {
+                                localStorage.setItem('doctorProfile', JSON.stringify(loginResult.doctorProfile));
+                            }
+                            
+                            showToast('Auto-login successful! Redirecting to dashboard...', 'success');
+                            setTimeout(() => {
+                                window.location.href = 'dashboard.html';
+                            }, 1500);
+                        } else {
+                            showToast('Registration successful! Please login manually.', 'success');
+                            setTimeout(() => {
+                                window.location.href = 'login.html';
+                            }, 2000);
+                        }
+                    } catch (loginError) {
+                        console.error('Auto-login error:', loginError);
+                        showToast('Registration successful! Please login manually.', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'login.html';
+                        }, 2000);
+                    }
                 } else {
                     showToast(result.error || 'Registration failed. Please try again.', 'error');
                 }
