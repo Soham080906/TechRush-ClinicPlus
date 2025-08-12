@@ -40,6 +40,24 @@
                 <a href="appointments.html" class="btn btn-primary" id="bookAppointmentBtn" style="display:none; margin-top: 1rem;">
                     <i class="fas fa-calendar-check"></i> Book Appointment
                 </a>
+                
+                <!-- Notification System for Patients -->
+                <div id="notificationSection" class="notification-section" style="display:none; margin-top: 1rem;">
+                    <div class="notification-header">
+                        <button class="notification-toggle" id="notificationToggle">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge" id="notificationBadge">0</span>
+                        </button>
+                    </div>
+                    <div class="notification-panel" id="notificationPanel" style="display:none;">
+                        <div class="notification-content">
+                            <h4>Upcoming Appointments</h4>
+                            <div id="upcomingNotifications">
+                                <!-- Notifications will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -263,10 +281,15 @@
                 // Load doctor profile
                 fetchDoctorProfileAndLoad();
                 document.getElementById('bookAppointmentBtn').style.display = 'none';
+                document.getElementById('notificationSection').style.display = 'none';
             } else {
                 document.getElementById('welcomeMessage').textContent = `Welcome, ${userName}`;
                 document.getElementById('myAppointmentsTitle').textContent = 'My Appointments';
                 document.getElementById('bookAppointmentBtn').style.display = 'inline-block';
+                document.getElementById('notificationSection').style.display = 'block';
+                
+                // Load notifications for patients
+                loadNotifications();
             }
         }
 
@@ -1129,6 +1152,98 @@
             }, 2000);
         }
 
+        // Load and display notifications for upcoming appointments
+        async function loadNotifications() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:5000/api/appointments/my', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const appointments = await response.json();
+                    const upcomingAppointments = getUpcomingAppointments(appointments);
+                    displayNotifications(upcomingAppointments);
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        // Get appointments within the next 48 hours
+        function getUpcomingAppointments(appointments) {
+            const now = new Date();
+            const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+            const dayAfterTomorrow = new Date(now.getTime() + 48 * 60 * 60 * 1000); // 48 hours from now
+            
+            return appointments.filter(appointment => {
+                const appointmentTime = new Date(appointment.slot);
+                return appointment.status === 'booked' && 
+                       appointmentTime > now && 
+                       appointmentTime <= dayAfterTomorrow;
+            });
+        }
+
+        // Display notifications in the notification panel
+        function displayNotifications(upcomingAppointments) {
+            const notificationBadge = document.getElementById('notificationBadge');
+            const upcomingNotifications = document.getElementById('upcomingNotifications');
+            
+            // Update notification badge count
+            notificationBadge.textContent = upcomingAppointments.length;
+            
+            if (upcomingAppointments.length === 0) {
+                upcomingNotifications.innerHTML = '<p class="no-notifications">No upcoming appointments in the next 48 hours.</p>';
+                return;
+            }
+            
+            // Display each upcoming appointment as a notification
+            upcomingNotifications.innerHTML = upcomingAppointments.map(appointment => {
+                const appointmentTime = new Date(appointment.slot);
+                const timeUntil = getTimeUntil(appointmentTime);
+                
+                return `
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="notification-details">
+                            <h5>Upcoming Appointment</h5>
+                            <p><strong>${appointment.doctor ? appointment.doctor.name : 'Doctor'}</strong> - ${appointment.doctor ? appointment.doctor.specialization : 'Specialist'}</p>
+                            <p><i class="fas fa-hospital"></i> ${appointment.clinic ? appointment.clinic.name : 'Clinic'}</p>
+                            <p><i class="fas fa-clock"></i> ${appointmentTime.toLocaleDateString()} at ${appointmentTime.toLocaleTimeString()}</p>
+                            <small class="time-until">${timeUntil}</small>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Calculate time until appointment
+        function getTimeUntil(appointmentTime) {
+            const now = new Date();
+            const diff = appointmentTime - now;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (hours > 0) {
+                return `in ${hours} hour${hours > 1 ? 's' : ''} ${minutes > 0 ? `and ${minutes} minute${minutes > 1 ? 's' : ''}` : ''}`;
+            } else if (minutes > 0) {
+                return `in ${minutes} minute${minutes > 1 ? 's' : ''}`;
+            } else {
+                return 'very soon';
+            }
+        }
+
+        // Toggle notification panel
+        function toggleNotificationPanel() {
+            const panel = document.getElementById('notificationPanel');
+            const isVisible = panel.style.display !== 'none';
+            panel.style.display = isVisible ? 'none' : 'block';
+        }
+
         // Initialize dashboard
         checkAuth();
         loadUserRole();
@@ -1148,6 +1263,12 @@
             const appointmentFilter = document.getElementById('appointmentFilter');
             if (appointmentFilter) {
                 appointmentFilter.addEventListener('change', applyAppointmentFilter);
+            }
+
+            // Toggle notification panel
+            const notificationToggle = document.getElementById('notificationToggle');
+            if (notificationToggle) {
+                notificationToggle.addEventListener('click', toggleNotificationPanel);
             }
         });
     </script>
@@ -1699,6 +1820,150 @@
             to {
                 transform: translateX(0);
                 opacity: 1;
+            }
+        }
+
+        /* Notification System Styles */
+        .notification-section {
+            position: relative;
+            display: inline-block;
+        }
+
+        .notification-toggle {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .notification-toggle:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .notification-panel {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 400px;
+            max-height: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .notification-content {
+            padding: 1.5rem;
+        }
+
+        .notification-content h4 {
+            margin: 0 0 1rem 0;
+            color: #1e293b;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background-color 0.2s ease;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-item:hover {
+            background-color: #f8fafc;
+        }
+
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        .notification-details {
+            flex: 1;
+        }
+
+        .notification-details h5 {
+            margin: 0 0 0.5rem 0;
+            color: #1e293b;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .notification-details p {
+            margin: 0.25rem 0;
+            color: #64748b;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .notification-details strong {
+            color: #1e293b;
+        }
+
+        .time-until {
+            color: #10b981;
+            font-weight: 500;
+            font-style: italic;
+        }
+
+        .no-notifications {
+            text-align: center;
+            color: #64748b;
+            font-style: italic;
+            padding: 2rem 1rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .notification-panel {
+                width: 320px;
+                right: -50px;
             }
         }
     </style>

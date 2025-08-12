@@ -22,6 +22,12 @@ PORT=5000
 
 # Environment
 NODE_ENV=development
+
+# Email Configuration (for password reset)
+# For Gmail, use your email and app password
+# To get app password: Google Account > Security > 2-Step Verification > App passwords
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
 `;
 
 try {

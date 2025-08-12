@@ -497,6 +497,22 @@ body {
     border-color: #2563eb;
 }
 
+.forgot-password-link {
+    text-align: right;
+    margin-top: 0.5rem;
+}
+
+.forgot-password-link a {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: color 0.3s ease;
+}
+
+.forgot-password-link a:hover {
+    color: #2563eb;
+}
+
 .form-group select {
     width: 100%;
     padding: 1rem;
