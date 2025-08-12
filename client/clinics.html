@@ -122,36 +122,94 @@
                 {
                     _id: '1',
                     name: 'Bharati Hospital',
+                    location: 'Satara Rd, Bharati Vidyapeeth Campus, Dhankawadi',
                    
                     
                     services: ['Cardiology', 'Pediatrics', 'General Medicine', 'Emergency Care'],
-                    doctorCount: 2,
-                    specializations: ['Cardiologist', 'Pediatrician', 'General Physician']
+                    doctorCount:2,
+                    
+                    
                 },
                 {
                     _id: '2',
                     name: 'Sahyadri Super Speciality Hospital',
+                    location:'Karve Road Deccan, Pune',
                    
                  
                     services: ['Dermatology', 'Orthopedics', 'Neurology', 'Physical Therapy'],
                     doctorCount: 2,
-                    specializations: ['Dermatologist', 'Orthopedic Surgeon', 'Neurologist']
+                    
+                
                 },
                 {
                     _id: '3',
                     name: 'Medipoint Hospital',
+                    location: 'Nagar Road, Chandan Nagar-vadgaon Sheri',
                    
                     services: ['General Medicine', 'Preventive Care', 'Vaccinations', 'Health Screenings'],
-                    doctorCount: 2,
-                    specializations: ['General Physician', 'Family Medicine']
+                    doctorCount: 1,
+                    
                 },
                 {
                     _id: '4',
                     name: 'Lifeline Hospital',
+                    location: 'Sector No 1, Indrayani Nagar Near Hotel Haveli, Pune Nashik Highway',
                    
                     services: ['Cardiology', 'Dermatology', 'Endocrinology', 'Gastroenterology'],
+                    doctorCount: 1,
+                    
+                },
+                {
+                    _id: '5',
+                    name: "Jupiter Multispeciality Hospital",
+                    location: "Shivajinagar, Pune",
+                    services: ['Cardiology', 'Dermatology', 'Endocrinology', 'Gastroenterology'],
                     doctorCount: 2,
-                    specializations: ['Cardiologist', 'Dermatologist', 'Endocrinologist', 'Gastroenterologist']
+
+                },
+                {
+                    _id: '6',
+                    name:"Magnum Hospital",
+                    location: "Deccan Gymkhana, Pune",
+                    services: ['Cardiology', 'Dermatology', 'Endocrinology'],
+                    doctorCount: 1,
+
+                },
+                {
+                    _id: '7',
+                    name: "Sasoon Hospital",
+                    location: 'Kothrud, Pune',
+                    services: ['General Medicine', 'Preventive Care', 'Vaccinations', 'Health Screenings'],
+                    doctorCount: 3,
+                },
+                {
+                    _id: '8',
+                    name: "Ruby Hall Clinic",
+                    location: 'Kasba Peth, Pune',
+                    services: ['General Medicine', 'Vaccinations', 'Health Screenings'],
+                    doctorCount: 2,
+                },
+                {
+                    _id: '9',
+                    name: "Kamla Nehru Hospital",
+                    location: 'Mangalwar peth, Pune',
+                    services: ['Vaccinations', 'Health Screenings'],
+                    doctorCount: 1,
+                },
+                {
+                    _id: '10',
+                    name: "Deenanath Mangeshkar Hospital",
+                    location: 'Mhatre Bridge, Pune',
+                    services: ['Cardiology', 'Dermatology','General Medicine', 'Preventive Care'],
+                    doctorCount: 2,
+
+                },
+                {
+                    _id: '11',
+                    name: "Manipal Hospital",
+                    location: 'Baner, Pune',
+                    services: ['Dermatology','General Medicine', 'Preventive Care'],
+                    doctorCount: 2,
                 }
             ];
 
@@ -197,12 +255,7 @@
                             ${clinic.services.map(service => `<span class="service-tag">${service}</span>`).join('')}
                         </div>
                     </div>
-                    <div class="clinic-specializations">
-                        <h4>Specializations</h4>
-                        <div class="specializations-list">
-                            ${clinic.specializations.map(spec => `<span class="spec-tag">${spec}</span>`).join('')}
-                        </div>
-                    </div>
+                    
                     <div class="clinic-actions">
                         <a href="appointments.html" class="btn btn-primary btn-sm">
                             <i class="fas fa-calendar-plus"></i> Book Appointment

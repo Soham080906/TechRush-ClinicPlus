@@ -661,3 +661,158 @@ body {
         font-size: 0.9rem;
     }
 } 
+        /* User Status Styles */
+        .user-status {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .status-indicator.logged-in {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-indicator.logged-out {
+            background: rgba(59, 130, 246, 0.1);
+            color: #e89802;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .status-indicator i {
+            font-size: 1.25rem;
+        }
+
+        .status-indicator span {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .status-indicator small {
+            display: block;
+            margin-top: 0.25rem;
+            opacity: 0.8;
+            font-weight: 400;
+        }
+
+        /* User Info in Navigation */
+        .user-info {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-name {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #2563eb;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: rgba(37, 99, 235, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .user-name:hover {
+            background: rgba(37, 99, 235, 0.2);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            padding: 0.5rem;
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .user-info:hover .user-dropdown {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .user-dropdown .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .user-dropdown .nav-link:hover {
+            background: #f3f4f6;
+            color: #2563eb;
+        }
+
+        /* Button States */
+        .btn-disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            background: #9ca3af !important;
+        }
+
+        .btn-disabled:hover {
+            background: #9ca3af !important;
+            transform: none !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .user-info {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .user-dropdown {
+                position: static;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                box-shadow: none;
+                background: transparent;
+                padding: 0;
+            }
+
+            .user-dropdown .nav-link {
+                padding: 0.5rem 0;
+                color: #64748b;
+            }
+
+            .status-indicator {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+
+            .status-indicator small {
+                margin-top: 0.5rem;
+            }
+        }
+    
