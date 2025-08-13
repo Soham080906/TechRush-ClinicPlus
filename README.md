@@ -8,13 +8,13 @@ ClinicPlus is a full-stack web application built with the MERN stack (MongoDB, E
 
 ###  Key Features
 
-- ** User Management**: Register as a patient or doctor with secure authentication
-- ** Clinic & Doctor Directory**: Browse clinics and find the right specialist for your needs
-- ** Smart Appointment Booking**: Book appointments with real-time availability
-- ** Secure Authentication**: JWT-based login with password reset via OTP
-- ** Responsive Design**: Works perfectly on desktop, tablet, and mobile
-- ** Smart Notifications**: Get reminders for upcoming appointments
-- ** Doctor Dashboard**: Complete profile management for healthcare providers
+- 1. User Management**: Register as a patient or doctor with secure authentication
+- 2. Clinic & Doctor Directory**: Browse clinics and find the right specialist for your needs
+- 3. Smart Appointment Booking**: Book appointments with real-time availability
+- 4. Secure Authentication**: JWT-based login with password reset via OTP
+- 5. Responsive Design**: Works perfectly on desktop, tablet, and mobile
+- 6. Smart Notifications**: Get reminders for upcoming appointments
+- 7. Doctor Dashboard**: Complete profile management for healthcare providers
 
 ## 🚀 Getting Started
 
