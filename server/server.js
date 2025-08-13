@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 
 const authRoutes = require('./routes/auth');
 const clinicRoutes = require('./routes/clinics');
@@ -38,7 +39,7 @@ mongoose.connect(process.env.MONGO_URI, {
     process.exit(1);
   });
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/clinics', clinicRoutes);
 app.use('/api/doctors', doctorRoutes);
@@ -48,6 +49,16 @@ app.use('/api/users', userRoutes);
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
+});
+
+// Serve static client files
+const clientDir = path.join(__dirname, '..', 'client');
+app.use(express.static(clientDir));
+
+// Fallback to index.html for non-API routes (supports client-side routing / direct links)
+// Use regex because Express 5 no longer supports '*' path. This matches any path not starting with /api
+app.get(/^\/(?!api)(.*)/, (req, res) => {
+  res.sendFile(path.join(clientDir, 'index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
