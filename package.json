@@ -1,0 +1,13 @@
+{
+  "name": "clinicplus",
+  "private": true,
+  "version": "1.0.0",
+  "description": "ClinicPlus - MERN app for booking doctor appointments",
+  "scripts": {
+    "start": "node server/server.js",
+    "postinstall": "cd server && npm install"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
