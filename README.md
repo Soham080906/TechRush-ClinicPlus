@@ -213,49 +213,6 @@ const transporter = nodemailer.createTransport({
 - Set environment variables in your hosting platform
 - Ensure CORS is configured for your frontend domain
 
-## 🚆 Deploying to Railway
-
-Railway can host your Node.js API and serve the static client. This repo is already structured for that.
-
-### 1) Add root package.json (at project root)
-Create a file named `package.json` in the repository root with:
-
-```json
-{
-  "name": "clinicplus",
-  "private": true,
-  "scripts": {
-    "start": "node server/server.js",
-    "postinstall": "cd server && npm install"
-  },
-  "engines": {
-    "node": ">=18"
-  }
-}
-```
-
-This ensures Railway runs `npm start` from the root and installs server deps automatically.
-
-### 2) Environment Variables on Railway
-Configure these in the Railway project settings (Variables):
-- `MONGO_URI`
-- `JWT_SECRET`
-- `EMAIL_USER`
-- `EMAIL_PASS`
-- `PORT` (Railway sets this automatically; your server already reads `process.env.PORT`)
-
-### 3) Static Client + API
-- The Express server serves files from `client/` and falls back to `index.html` for non-API routes
-- All frontend fetch calls now use relative paths like `/api/...` so they work on Railway without changes
-
-### 4) Deploy Steps
-- Push your repo to GitHub
-- Create a new Railway project → Deploy from GitHub
-- Set environment variables
-- Deploy and open the Railway URL
-
-If you need a custom domain, add it in Railway’s domain settings and point your DNS accordingly.
-
 ## 🤝 Contributing
 
 We welcome contributions! Here's how you can help:
