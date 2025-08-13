@@ -2,19 +2,19 @@
 
 Welcome to **ClinicPlus**, a modern web application that makes booking doctor appointments as easy as ordering food online! 🚀
 
-## ✨ What is ClinicPlus?
+##  What is ClinicPlus?
 
 ClinicPlus is a full-stack web application built with the MERN stack (MongoDB, Express.js, React-ready frontend, Node.js) that connects patients with healthcare providers. Think of it as "Uber for doctor appointments" - simple, fast, and reliable.
 
-### 🌟 Key Features
+###  Key Features
 
-- **👥 User Management**: Register as a patient or doctor with secure authentication
-- **🏥 Clinic & Doctor Directory**: Browse clinics and find the right specialist for your needs
-- **📅 Smart Appointment Booking**: Book appointments with real-time availability
-- **🔐 Secure Authentication**: JWT-based login with password reset via OTP
-- **📱 Responsive Design**: Works perfectly on desktop, tablet, and mobile
-- **🔔 Smart Notifications**: Get reminders for upcoming appointments
-- **👨‍⚕️ Doctor Dashboard**: Complete profile management for healthcare providers
+- ** User Management**: Register as a patient or doctor with secure authentication
+- ** Clinic & Doctor Directory**: Browse clinics and find the right specialist for your needs
+- ** Smart Appointment Booking**: Book appointments with real-time availability
+- ** Secure Authentication**: JWT-based login with password reset via OTP
+- ** Responsive Design**: Works perfectly on desktop, tablet, and mobile
+- ** Smart Notifications**: Get reminders for upcoming appointments
+- ** Doctor Dashboard**: Complete profile management for healthcare providers
 
 ## 🚀 Getting Started
 
