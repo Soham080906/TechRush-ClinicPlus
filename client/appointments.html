@@ -172,12 +172,12 @@
         async function loadBookingData() {
             try {
                 // Load clinics
-                const clinicsResponse = await fetch('http://localhost:5000/api/clinics');
+                const clinicsResponse = await fetch('/api/clinics');
                 const clinics = await clinicsResponse.json();
                 populateClinicSelect(clinics);
 
                 // Load doctors
-                const doctorsResponse = await fetch('http://localhost:5000/api/doctors');
+                const doctorsResponse = await fetch('/api/doctors');
                 allDoctors = await doctorsResponse.json();
                 // Initially populate with all doctors (or none)
                 populateDoctorSelect([]);
@@ -258,7 +258,7 @@
 
             try {
                 // Fetch booked slots from backend
-                const response = await fetch(`http://localhost:5000/api/appointments/booked-slots/${selectedDoctor}/${selectedDate}`);
+                const response = await fetch(`/api/appointments/booked-slots/${selectedDoctor}/${selectedDate}`);
                 
                 if (response.ok) {
                     const data = await response.json();
@@ -448,7 +448,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:5000/api/appointments', {
+                const response = await fetch('/api/appointments', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
