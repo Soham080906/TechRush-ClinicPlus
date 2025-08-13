@@ -303,7 +303,7 @@
             }
             
             try {
-                const response = await fetch(`/api/doctors/user/${userId}`, {
+                const response = await fetch(`http://localhost:5000/api/doctors/user/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
@@ -412,7 +412,7 @@
         async function loadDashboardData() {
             try {
                 // Load appointments
-                const appointmentsResponse = await fetch('/api/appointments/my', {
+                const appointmentsResponse = await fetch('http://localhost:5000/api/appointments/my', {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
@@ -424,13 +424,13 @@
                 document.getElementById('appointmentCount').textContent = activeAppointments.length;
 
                 // Load doctors
-                const doctorsResponse = await fetch('/api/doctors');
+                const doctorsResponse = await fetch('http://localhost:5000/api/doctors');
                 const doctors = await doctorsResponse.json();
                 document.getElementById('doctorCount').textContent = doctors.length;
                 populateDoctorsGrid(doctors);
 
                 // Load clinics
-                const clinicsResponse = await fetch('/api/clinics');
+                const clinicsResponse = await fetch('http://localhost:5000/api/clinics');
                 const clinics = await clinicsResponse.json();
                 document.getElementById('clinicCount').textContent = clinics.length;
                 populateClinicsGrid(clinics);
@@ -458,7 +458,7 @@
                 console.log('Loading doctor patient appointments for userId:', userId, 'with filter:', statusFilter);
                 
                 // Fetch appointments where the logged-in doctor is the assigned doctor
-                const url = `/api/appointments/doctor/${userId}${statusFilter !== 'all' ? `?status=${statusFilter}` : ''}`;
+                const url = `http://localhost:5000/api/appointments/doctor/${userId}${statusFilter !== 'all' ? `?status=${statusFilter}` : ''}`;
                 const response = await fetch(url, {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -856,7 +856,7 @@
         // Load specializations for edit form
         async function loadSpecializations() {
             try {
-                const response = await fetch('/api/specializations');
+                const response = await fetch('http://localhost:5000/api/specializations');
                 const specializations = await response.json();
                 const select = document.getElementById('editSpecialization');
                 select.innerHTML = '<option value="">Select specialization</option>';
@@ -888,7 +888,7 @@
         // Load clinics for edit form
         async function loadClinicsForEdit() {
             try {
-                const response = await fetch('/api/clinics');
+                const response = await fetch('http://localhost:5000/api/clinics');
                 const clinics = await response.json();
                 const select = document.getElementById('editClinic');
                 select.innerHTML = '<option value="">Choose a clinic</option>';
@@ -928,7 +928,7 @@
             };
             
             try {
-                const response = await fetch(`/api/doctors/profile/me`, {
+                const response = await fetch(`http://localhost:5000/api/doctors/profile/me`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -962,7 +962,7 @@
             }
             
             try {
-                const response = await fetch(`/api/appointments/${appointmentId}/cancel`, {
+                const response = await fetch(`http://localhost:5000/api/appointments/${appointmentId}/cancel`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -996,7 +996,7 @@
                             currentStatus === 'confirmed' ? 'completed' : 'pending';
             
             try {
-                const response = await fetch(`/api/appointments/${appointmentId}/status`, {
+                const response = await fetch(`http://localhost:5000/api/appointments/${appointmentId}/status`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1156,7 +1156,7 @@
         async function loadNotifications() {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('/api/appointments/my', {
+                const response = await fetch('http://localhost:5000/api/appointments/my', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

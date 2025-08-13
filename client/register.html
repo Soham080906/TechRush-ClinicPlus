@@ -116,7 +116,7 @@
         // Load clinics for doctor registration
         async function loadClinics() {
             try {
-                const response = await fetch('/api/clinics');
+                const response = await fetch('http://localhost:5000/api/clinics');
                 const clinics = await response.json();
                 const clinicSelect = document.getElementById('clinic');
                 
@@ -134,7 +134,7 @@
         // Load specializations dynamically
         async function loadSpecializations() {
             try {
-                const response = await fetch('/api/specializations');
+                const response = await fetch('http://localhost:5000/api/specializations');
                 const specializations = await response.json();
                 const specializationSelect = document.getElementById('specialization');
                 
@@ -221,7 +221,7 @@
             }
             
             try {
-                const response = await fetch('/api/auth/register', {
+                const response = await fetch('http://localhost:5000/api/auth/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -236,7 +236,7 @@
                     
                     // Auto-login after successful registration
                     try {
-                        const loginResponse = await fetch('/api/auth/login', {
+                        const loginResponse = await fetch('http://localhost:5000/api/auth/login', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
